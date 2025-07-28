@@ -70,7 +70,7 @@ const TrustSecuritySection = () => {
         </div>
 
         {/* System Status */}
-        <div className="bg-gradient-to-r from-bg-dark to-brand-purple rounded-3xl p-8 mb-16">
+        <div className="bg-gradient-to-r from-brand-lavender to-brand-purple rounded-3xl p-8 mb-16">
           <div className="grid md:grid-cols-3 gap-8 text-white">
             <div className="text-center">
               <div className="text-3xl font-bold text-brand-coral mb-2">99.9%</div>

@@ -12,7 +12,7 @@ const ROICalculatorSection = () => {
   const costSavings = providers * 100; // $100/month savings per provider vs competitors
 
   return (
-    <section className="py-24 bg-gradient-to-br from-bg-dark to-brand-purple text-white">
+    <section className="py-24 bg-gradient-to-br from-brand-lavender to-brand-purple text-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <Calculator className="w-12 h-12 text-brand-coral mx-auto mb-4" />

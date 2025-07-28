@@ -2,7 +2,7 @@ import { Heart } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-br from-bg-dark to-brand-purple text-white py-16">
+    <footer className="bg-gradient-to-br from-brand-lavender to-brand-purple text-white py-16">
       <div className="container mx-auto px-6">
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           {/* Logo & Description */}
