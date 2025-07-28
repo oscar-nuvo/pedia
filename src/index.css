@@ -41,9 +41,23 @@
 
 @layer base {
   :root {
-    /* Brand Colors */
-    --brand-yellow: 77 100% 45%;
-    --brand-lime: 72 88% 52%;
+    /* Brand Colors - Soft & Elegant */
+    --brand-pink: 335 100% 85%;
+    --brand-coral: 12 100% 78%;
+    --brand-peach: 15 100% 90%;
+    --brand-lavender: 255 87% 83%;
+    --brand-purple: 255 77% 77%;
+    
+    /* Accent Colors */
+    --accent-rose: 339 100% 83%;
+    --accent-lilac: 260 100% 94%;
+    --accent-cream: 20 100% 97%;
+    
+    /* Background Colors */
+    --bg-primary: 320 100% 97%;
+    --bg-secondary: 260 100% 98%;
+    --bg-card: 0 0% 100%;
+    --bg-dark: 252 20% 18%;
     
     /* Neutral Scale */
     --neutral-50: 0 0% 98%;
@@ -66,14 +80,14 @@
     --muted-foreground: 0 0% 45%;
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 77 100% 45%;
+    --ring: 335 100% 85%;
 
     /* Component Colors */
     --primary: 0 0% 9%;
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96%;
     --secondary-foreground: 0 0% 9%;
-    --accent: 77 100% 45%;
+    --accent: 335 100% 85%;
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;

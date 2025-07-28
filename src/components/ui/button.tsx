@@ -14,11 +14,11 @@ const buttonVariants = cva(
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
           "border border-neutral-300 bg-background hover:bg-neutral-100",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-neutral-100",
+        secondary: "bg-brand-lavender text-white hover:bg-brand-purple",
         ghost: "hover:bg-neutral-100",
         link: "text-primary underline-offset-4 hover:underline",
-        accent: "bg-brand-yellow text-accent-foreground hover:bg-brand-lime",
+        accent: "bg-gradient-to-r from-brand-pink to-brand-coral text-white hover:shadow-lg hover:shadow-brand-pink/30",
+        soft: "bg-brand-peach/30 text-brand-coral hover:bg-brand-peach/50",
         white: "bg-white/20 backdrop-blur text-white hover:bg-white/30"
       },
       size: {

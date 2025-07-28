@@ -19,9 +19,23 @@ export default {
 		},
 		extend: {
 			colors: {
-				// Brand colors
-				'brand-yellow': 'hsl(var(--brand-yellow))',
-				'brand-lime': 'hsl(var(--brand-lime))',
+				// Brand colors - Soft & Elegant
+				'brand-pink': 'hsl(var(--brand-pink))',
+				'brand-coral': 'hsl(var(--brand-coral))',
+				'brand-peach': 'hsl(var(--brand-peach))',
+				'brand-lavender': 'hsl(var(--brand-lavender))',
+				'brand-purple': 'hsl(var(--brand-purple))',
+				
+				// Accent colors
+				'accent-rose': 'hsl(var(--accent-rose))',
+				'accent-lilac': 'hsl(var(--accent-lilac))',
+				'accent-cream': 'hsl(var(--accent-cream))',
+				
+				// Background colors
+				'bg-primary': 'hsl(var(--bg-primary))',
+				'bg-secondary': 'hsl(var(--bg-secondary))',
+				'bg-card': 'hsl(var(--bg-card))',
+				'bg-dark': 'hsl(var(--bg-dark))',
 				
 				// Neutral colors
 				'neutral': {
