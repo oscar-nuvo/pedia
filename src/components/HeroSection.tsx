@@ -1,10 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Clock, Users, Brain } from "lucide-react";
 import heroImage from "@/assets/hero-dashboard.jpg";
-
 const HeroSection = () => {
-  return (
-    <section className="relative overflow-hidden bg-neutral-50">
+  return <section className="relative overflow-hidden bg-neutral-50">
       <div className="container mx-auto px-6 py-20 lg:py-32">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
@@ -70,20 +68,14 @@ const HeroSection = () => {
           {/* Right Content - Hero Image */}
           <div className="relative">
             <div className="relative z-10 rounded-3xl overflow-hidden shadow-xl">
-              <img 
-                src={heroImage} 
-                alt="PediatricAI Dashboard" 
-                className="w-full h-auto"
-              />
+              
             </div>
             {/* Decorative elements */}
             <div className="absolute top-8 -right-8 w-24 h-24 bg-brand-yellow rounded-full opacity-30"></div>
-            <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-black rounded-full opacity-20"></div>
+            
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HeroSection;
