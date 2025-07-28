@@ -44,8 +44,8 @@ const TrustSecuritySection = () => {
     <section className="py-24 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <Shield className="w-12 h-12 text-brand-yellow mx-auto mb-4" />
-          <h2 className="text-3xl lg:text-4xl font-bold text-black mb-4">
+          <Shield className="w-12 h-12 text-brand-coral mx-auto mb-4" />
+          <h2 className="text-3xl lg:text-4xl font-bold text-neutral-800 mb-4">
             Enterprise-Grade Security & Trust
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
@@ -58,11 +58,11 @@ const TrustSecuritySection = () => {
           {securityFeatures.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <div key={index} className="bg-neutral-50 rounded-2xl p-6 text-center">
-                <div className="bg-brand-yellow rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
-                  <Icon className="w-6 h-6 text-black" />
+              <div key={index} className="bg-brand-peach/20 rounded-2xl p-6 text-center">
+                <div className="bg-gradient-to-r from-brand-peach to-brand-coral rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-coral/20">
+                  <Icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-black mb-2">{feature.title}</h3>
+                <h3 className="font-semibold text-neutral-800 mb-2">{feature.title}</h3>
                 <p className="text-sm text-neutral-600">{feature.description}</p>
               </div>
             );
@@ -70,19 +70,19 @@ const TrustSecuritySection = () => {
         </div>
 
         {/* System Status */}
-        <div className="bg-black rounded-3xl p-8 mb-16">
+        <div className="bg-gradient-to-r from-bg-dark to-brand-purple rounded-3xl p-8 mb-16">
           <div className="grid md:grid-cols-3 gap-8 text-white">
             <div className="text-center">
-              <div className="text-3xl font-bold text-brand-yellow mb-2">99.9%</div>
+              <div className="text-3xl font-bold text-brand-coral mb-2">99.9%</div>
               <div className="text-neutral-300">Uptime Last 12 Months</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-brand-yellow mb-2">&lt;50ms</div>
+              <div className="text-3xl font-bold text-brand-coral mb-2">&lt;50ms</div>
               <div className="text-neutral-300">Average Response Time</div>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-brand-peach rounded-full"></div>
                 <div className="text-lg font-bold">All Systems Operational</div>
               </div>
               <div className="text-neutral-300">Real-time Status</div>
@@ -92,7 +92,7 @@ const TrustSecuritySection = () => {
 
         {/* Integrations */}
         <div className="mb-16">
-          <h3 className="text-2xl font-bold text-black text-center mb-8">
+          <h3 className="text-2xl font-bold text-neutral-800 text-center mb-8">
             Seamlessly Integrates With Your Existing Tools
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
@@ -106,16 +106,16 @@ const TrustSecuritySection = () => {
         </div>
 
         {/* Certifications */}
-        <div className="bg-neutral-50 rounded-3xl p-8">
-          <h3 className="text-2xl font-bold text-black text-center mb-8">
+        <div className="bg-brand-peach/20 rounded-3xl p-8">
+          <h3 className="text-2xl font-bold text-neutral-800 text-center mb-8">
             Certified & Compliant
           </h3>
           <div className="grid md:grid-cols-4 gap-6">
             {certifications.map((cert, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 text-center">
-                <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-3" />
-                <h4 className="font-semibold text-black mb-1">{cert.name}</h4>
-                <p className="text-sm text-green-600">{cert.status}</p>
+              <div key={index} className="bg-white rounded-xl p-6 text-center shadow-sm">
+                <CheckCircle className="w-8 h-8 text-brand-coral mx-auto mb-3" />
+                <h4 className="font-semibold text-neutral-800 mb-1">{cert.name}</h4>
+                <p className="text-sm text-brand-purple">{cert.status}</p>
               </div>
             ))}
           </div>
@@ -124,7 +124,7 @@ const TrustSecuritySection = () => {
             <p className="text-neutral-600 mb-4">
               Trusted by healthcare organizations nationwide
             </p>
-            <button className="text-neutral-600 hover:text-black transition-colors font-medium">
+            <button className="text-brand-purple hover:text-brand-coral transition-colors font-medium">
               View Security Documentation →
             </button>
           </div>

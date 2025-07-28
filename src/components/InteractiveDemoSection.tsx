@@ -40,7 +40,7 @@ const InteractiveDemoSection = () => {
     <section className="py-24 bg-neutral-50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-4xl font-bold text-black mb-4">
+          <h2 className="text-3xl lg:text-4xl font-bold text-neutral-800 mb-4">
             See PediatricAI in Action
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
@@ -61,31 +61,31 @@ const InteractiveDemoSection = () => {
                   onClick={() => setActiveDemo(feature.id)}
                   className={`p-6 rounded-2xl cursor-pointer transition-all duration-300 ${
                     isActive 
-                      ? 'bg-brand-yellow border-2 border-brand-yellow shadow-lg' 
+                      ? 'bg-gradient-to-r from-brand-coral to-brand-peach border-2 border-brand-coral shadow-lg shadow-brand-coral/20' 
                       : 'bg-white border-2 border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
                   <div className="flex items-start gap-4">
                     <div className={`p-3 rounded-xl ${
-                      isActive ? 'bg-black' : 'bg-neutral-100'
+                      isActive ? 'bg-white/80 backdrop-blur' : 'bg-neutral-100'
                     }`}>
                       <Icon className={`w-6 h-6 ${
-                        isActive ? 'text-white' : 'text-neutral-600'
+                        isActive ? 'text-brand-coral' : 'text-neutral-600'
                       }`} />
                     </div>
                     <div className="flex-1">
                       <h3 className={`text-lg font-semibold mb-2 ${
-                        isActive ? 'text-black' : 'text-neutral-800'
+                        isActive ? 'text-white' : 'text-neutral-800'
                       }`}>
                         {feature.title}
                       </h3>
                       <p className={`text-sm mb-3 ${
-                        isActive ? 'text-black' : 'text-neutral-600'
+                        isActive ? 'text-white/90' : 'text-neutral-600'
                       }`}>
                         {feature.description}
                       </p>
                       {isActive && (
-                        <div className="bg-white/50 rounded-lg p-3 text-sm font-mono text-black">
+                        <div className="bg-white/80 backdrop-blur rounded-lg p-3 text-sm font-mono text-brand-purple">
                           {feature.preview}
                         </div>
                       )}
@@ -109,7 +109,7 @@ const InteractiveDemoSection = () => {
               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                 <button 
                   onClick={() => setIsPlaying(!isPlaying)}
-                  className="bg-brand-yellow hover:bg-brand-lime text-black w-16 h-16 rounded-full flex items-center justify-center transition-colors shadow-lg"
+                  className="bg-gradient-to-r from-brand-pink to-brand-coral hover:shadow-lg hover:shadow-brand-pink/30 text-white w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg"
                 >
                   <Play className="w-6 h-6 ml-1" />
                 </button>
@@ -129,17 +129,17 @@ const InteractiveDemoSection = () => {
             </div>
 
             <div className="mt-6 space-y-4">
-              <h3 className="text-xl font-bold text-black">
+              <h3 className="text-xl font-bold text-neutral-800">
                 Interactive Demo Available
               </h3>
               <p className="text-neutral-600">
                 Click the features on the left to see different aspects of PediatricAI in action.
               </p>
               <div className="flex gap-3">
-                <button className="bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-neutral-800 transition-colors">
+                <button className="bg-gradient-to-r from-brand-lavender to-brand-purple text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-brand-lavender/30 transition-all">
                   Schedule Live Demo
                 </button>
-                <button className="border border-neutral-300 text-neutral-700 px-6 py-3 rounded-full font-semibold hover:bg-neutral-50 transition-colors">
+                <button className="border border-brand-coral/30 text-brand-coral px-6 py-3 rounded-full font-semibold hover:bg-brand-peach/20 transition-colors">
                   Try Interactive Demo
                 </button>
               </div>

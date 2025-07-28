@@ -44,7 +44,7 @@ const BenefitsSection = () => {
     <section className="py-24 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-4xl font-bold text-black mb-4">
+          <h2 className="text-3xl lg:text-4xl font-bold text-neutral-800 mb-4">
             Why Pediatricians Choose PediatricAI
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
@@ -57,19 +57,19 @@ const BenefitsSection = () => {
           {benefits.map((benefit, index) => {
             const Icon = benefit.icon;
             return (
-              <div key={index} className="group p-8 rounded-3xl bg-white border border-neutral-200 hover:shadow-xl transition-all duration-300">
+              <div key={index} className="group p-8 rounded-3xl bg-white border border-neutral-200 hover:shadow-xl hover:shadow-brand-pink/10 transition-all duration-300">
                 <div className={`w-12 h-12 rounded-3xl flex items-center justify-center mb-6 ${
-                  benefit.color === 'primary' ? 'bg-black' :
-                  benefit.color === 'secondary' ? 'bg-neutral-100' :
-                  'bg-brand-yellow'
+                  benefit.color === 'primary' ? 'bg-gradient-to-r from-brand-lavender to-brand-purple' :
+                  benefit.color === 'secondary' ? 'bg-gradient-to-r from-brand-peach to-brand-coral' :
+                  'bg-gradient-to-r from-brand-pink to-accent-rose'
+                } shadow-lg ${
+                  benefit.color === 'primary' ? 'shadow-brand-lavender/20' :
+                  benefit.color === 'secondary' ? 'shadow-brand-coral/20' :
+                  'shadow-brand-pink/20'
                 }`}>
-                  <Icon className={`w-6 h-6 ${
-                    benefit.color === 'primary' ? 'text-white' :
-                    benefit.color === 'secondary' ? 'text-black' :
-                    'text-black'
-                  }`} />
+                  <Icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-black mb-3">
+                <h3 className="text-xl font-semibold text-neutral-800 mb-3">
                   {benefit.title}
                 </h3>
                 <p className="text-neutral-600 leading-relaxed">

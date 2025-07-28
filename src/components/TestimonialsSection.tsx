@@ -35,7 +35,7 @@ const TestimonialsSection = () => {
     <section className="py-24 bg-neutral-50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-4xl font-bold text-black mb-4">
+          <h2 className="text-3xl lg:text-4xl font-bold text-neutral-800 mb-4">
             Trusted by 1,000+ Pediatricians
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
@@ -45,14 +45,14 @@ const TestimonialsSection = () => {
 
         <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div key={index} className="bg-white rounded-3xl p-8 shadow-lg shadow-brand-pink/10 hover:shadow-xl hover:shadow-brand-pink/20 transition-all duration-300">
               <div className="flex items-center mb-6">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 text-brand-yellow fill-current" />
+                  <Star key={i} className="w-5 h-5 text-brand-coral fill-current" />
                 ))}
               </div>
               
-              <Quote className="w-8 h-8 text-brand-yellow mb-4" />
+              <Quote className="w-8 h-8 text-brand-coral mb-4" />
               
               <p className="text-neutral-700 leading-relaxed mb-6">
                 "{testimonial.quote}"
@@ -65,14 +65,14 @@ const TestimonialsSection = () => {
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div>
-                  <h4 className="font-semibold text-black">{testimonial.name}</h4>
+                  <h4 className="font-semibold text-neutral-800">{testimonial.name}</h4>
                   <p className="text-sm text-neutral-600">{testimonial.role}</p>
                   <p className="text-sm text-neutral-500">{testimonial.practice}</p>
                 </div>
               </div>
               
               <div className="mt-4 pt-4 border-t border-neutral-200">
-                <span className="inline-block bg-brand-yellow text-black px-3 py-1 rounded-full text-sm font-medium">
+                <span className="inline-block bg-gradient-to-r from-brand-peach to-brand-coral text-white px-3 py-1 rounded-full text-sm font-medium">
                   {testimonial.highlight}
                 </span>
               </div>
@@ -84,14 +84,14 @@ const TestimonialsSection = () => {
           <p className="text-neutral-600 mb-4">
             Join 1,000+ pediatricians who switched this month
           </p>
-          <div className="flex justify-center items-center gap-4">
-            <div className="flex -space-x-2">
-              {[1,2,3,4,5].map(i => (
-                <div key={i} className="w-8 h-8 bg-brand-yellow rounded-full border-2 border-white"></div>
-              ))}
+            <div className="flex justify-center items-center gap-4">
+              <div className="flex -space-x-2">
+                {[1,2,3,4,5].map(i => (
+                  <div key={i} className="w-8 h-8 bg-gradient-to-r from-brand-pink to-brand-coral rounded-full border-2 border-white"></div>
+                ))}
+              </div>
+              <span className="text-sm text-neutral-600">+995 more</span>
             </div>
-            <span className="text-sm text-neutral-600">+995 more</span>
-          </div>
         </div>
       </div>
     </section>

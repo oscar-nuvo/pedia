@@ -51,7 +51,7 @@ const ProblemSolutionSection = () => {
     <section className="py-24 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-4xl font-bold text-black mb-4">
+          <h2 className="text-3xl lg:text-4xl font-bold text-neutral-800 mb-4">
             The Pediatric Practice Crisis
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
@@ -63,16 +63,16 @@ const ProblemSolutionSection = () => {
           {/* Problems Side */}
           <div>
             <div className="flex items-center gap-3 mb-8">
-              <AlertTriangle className="w-8 h-8 text-red-500" />
-              <h3 className="text-2xl font-bold text-black">Current Problems</h3>
+              <AlertTriangle className="w-8 h-8 text-accent-rose" />
+              <h3 className="text-2xl font-bold text-neutral-800">Current Problems</h3>
             </div>
             
             <div className="space-y-6">
               {problems.map((problem, index) => (
-                <div key={index} className="bg-red-50 border border-red-200 rounded-2xl p-6">
-                  <h4 className="font-semibold text-black mb-2">{problem.title}</h4>
+                <div key={index} className="bg-accent-lilac/30 border border-accent-rose/30 rounded-2xl p-6">
+                  <h4 className="font-semibold text-neutral-800 mb-2">{problem.title}</h4>
                   <p className="text-neutral-700 mb-3">{problem.description}</p>
-                  <p className="text-sm text-red-600 font-medium">{problem.impact}</p>
+                  <p className="text-sm text-accent-rose font-medium">{problem.impact}</p>
                 </div>
               ))}
             </div>
@@ -81,18 +81,18 @@ const ProblemSolutionSection = () => {
           {/* Solutions Side */}
           <div>
             <div className="flex items-center gap-3 mb-8">
-              <CheckCircle className="w-8 h-8 text-green-500" />
-              <h3 className="text-2xl font-bold text-black">PediatricAI Solutions</h3>
+              <CheckCircle className="w-8 h-8 text-brand-coral" />
+              <h3 className="text-2xl font-bold text-neutral-800">PediatricAI Solutions</h3>
             </div>
             
             <div className="space-y-6">
               {solutions.map((solution, index) => (
-                <div key={index} className="bg-green-50 border border-green-200 rounded-2xl p-6">
-                  <h4 className="font-semibold text-black mb-2">{solution.title}</h4>
+                <div key={index} className="bg-brand-peach/20 border border-brand-coral/30 rounded-2xl p-6">
+                  <h4 className="font-semibold text-neutral-800 mb-2">{solution.title}</h4>
                   <p className="text-neutral-700 mb-3">{solution.description}</p>
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <p className="text-sm text-green-600 font-medium">{solution.benefit}</p>
+                    <CheckCircle className="w-4 h-4 text-brand-coral" />
+                    <p className="text-sm text-brand-coral font-medium">{solution.benefit}</p>
                   </div>
                 </div>
               ))}
@@ -102,20 +102,20 @@ const ProblemSolutionSection = () => {
 
         {/* Transformation Arrow */}
         <div className="flex justify-center my-12">
-          <div className="bg-brand-yellow rounded-full p-4">
-            <ArrowRight className="w-8 h-8 text-black" />
+          <div className="bg-gradient-to-r from-brand-coral to-brand-pink rounded-full p-4 shadow-lg shadow-brand-coral/20">
+            <ArrowRight className="w-8 h-8 text-white" />
           </div>
         </div>
 
         {/* Bottom CTA */}
         <div className="text-center">
-          <h3 className="text-2xl font-bold text-black mb-4">
+          <h3 className="text-2xl font-bold text-neutral-800 mb-4">
             Ready to Transform Your Practice?
           </h3>
           <p className="text-neutral-600 mb-6">
             Join 1,000+ pediatricians who've already made the switch
           </p>
-          <button className="bg-black text-white px-8 py-4 rounded-full font-semibold hover:bg-neutral-800 transition-colors">
+          <button className="bg-gradient-to-r from-brand-pink to-brand-coral text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg hover:shadow-brand-pink/30 transition-all">
             Start Your Free Trial
           </button>
         </div>

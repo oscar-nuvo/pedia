@@ -51,7 +51,7 @@ const FAQSection = () => {
     <section className="py-24 bg-neutral-50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-4xl font-bold text-black mb-4">
+          <h2 className="text-3xl lg:text-4xl font-bold text-neutral-800 mb-4">
             Frequently Asked Questions
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
@@ -62,18 +62,18 @@ const FAQSection = () => {
         <div className="max-w-4xl mx-auto">
           <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <div key={index} className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
+              <div key={index} className="bg-white rounded-2xl shadow-sm shadow-brand-pink/5 border border-neutral-200 overflow-hidden">
                 <button
                   onClick={() => setOpenFAQ(openFAQ === index ? -1 : index)}
                   className="w-full p-6 text-left flex items-center justify-between hover:bg-neutral-50 transition-colors"
                 >
-                  <h3 className="text-lg font-semibold text-black pr-4">
+                  <h3 className="text-lg font-semibold text-neutral-800 pr-4">
                     {faq.question}
                   </h3>
                   {openFAQ === index ? (
-                    <ChevronUp className="w-5 h-5 text-neutral-500 flex-shrink-0" />
+                    <ChevronUp className="w-5 h-5 text-brand-coral flex-shrink-0" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-neutral-500 flex-shrink-0" />
+                    <ChevronDown className="w-5 h-5 text-brand-coral flex-shrink-0" />
                   )}
                 </button>
                 
@@ -90,17 +90,17 @@ const FAQSection = () => {
           </div>
 
           <div className="text-center mt-12">
-            <h3 className="text-xl font-bold text-black mb-4">
+            <h3 className="text-xl font-bold text-neutral-800 mb-4">
               Still have questions?
             </h3>
             <p className="text-neutral-600 mb-6">
               Our pediatric specialists are here to help
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-neutral-800 transition-colors">
+              <button className="bg-gradient-to-r from-brand-lavender to-brand-purple text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg hover:shadow-brand-lavender/30 transition-all">
                 Schedule a Call
               </button>
-              <button className="border border-neutral-300 text-neutral-700 px-6 py-3 rounded-full font-semibold hover:bg-neutral-50 transition-colors">
+              <button className="border border-brand-coral/30 text-brand-coral px-6 py-3 rounded-full font-semibold hover:bg-brand-peach/20 transition-colors">
                 Email Support
               </button>
             </div>

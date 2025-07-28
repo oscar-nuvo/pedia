@@ -12,10 +12,10 @@ const ROICalculatorSection = () => {
   const costSavings = providers * 100; // $100/month savings per provider vs competitors
 
   return (
-    <section className="py-24 bg-black text-white">
+    <section className="py-24 bg-gradient-to-br from-bg-dark to-brand-purple text-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <Calculator className="w-12 h-12 text-brand-yellow mx-auto mb-4" />
+          <Calculator className="w-12 h-12 text-brand-coral mx-auto mb-4" />
           <h2 className="text-3xl lg:text-4xl font-bold mb-4">
             Calculate Your Practice Savings
           </h2>
@@ -42,7 +42,7 @@ const ROICalculatorSection = () => {
                 />
                 <div className="flex justify-between text-sm text-neutral-400 mt-1">
                   <span>1</span>
-                  <span className="font-bold text-brand-yellow">{providers}</span>
+                  <span className="font-bold text-brand-coral">{providers}</span>
                   <span>10</span>
                 </div>
               </div>
@@ -59,7 +59,7 @@ const ROICalculatorSection = () => {
                 />
                 <div className="flex justify-between text-sm text-neutral-400 mt-1">
                   <span>1hr</span>
-                  <span className="font-bold text-brand-yellow">{hoursPerDay}hrs</span>
+                  <span className="font-bold text-brand-coral">{hoursPerDay}hrs</span>
                   <span>6hrs</span>
                 </div>
               </div>
@@ -77,7 +77,7 @@ const ROICalculatorSection = () => {
                 />
                 <div className="flex justify-between text-sm text-neutral-400 mt-1">
                   <span>$100</span>
-                  <span className="font-bold text-brand-yellow">${hourlyRate}</span>
+                  <span className="font-bold text-brand-coral">${hourlyRate}</span>
                   <span>$300</span>
                 </div>
               </div>
@@ -86,26 +86,26 @@ const ROICalculatorSection = () => {
 
           {/* Results */}
           <div className="space-y-6">
-            <div className="bg-brand-yellow text-black rounded-3xl p-8">
+            <div className="bg-gradient-to-r from-brand-coral to-brand-peach text-white rounded-3xl p-8 shadow-lg shadow-brand-coral/20">
               <Clock className="w-8 h-8 mb-4" />
               <h4 className="text-lg font-semibold mb-2">Time Savings</h4>
               <p className="text-3xl font-bold">{providers * 2} hours/day</p>
               <p className="text-sm opacity-80">2 hours saved per provider daily</p>
             </div>
 
-            <div className="bg-neutral-900 rounded-3xl p-8">
-              <DollarSign className="w-8 h-8 text-brand-yellow mb-4" />
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20">
+              <DollarSign className="w-8 h-8 text-brand-coral mb-4" />
               <h4 className="text-lg font-semibold mb-2">Monthly Value Creation</h4>
-              <p className="text-3xl font-bold text-brand-yellow">${monthlySavings.toLocaleString()}</p>
-              <p className="text-sm text-neutral-400">From time savings alone</p>
+              <p className="text-3xl font-bold text-brand-coral">${monthlySavings.toLocaleString()}</p>
+              <p className="text-sm text-neutral-300">From time savings alone</p>
             </div>
 
-            <div className="bg-neutral-900 rounded-3xl p-8">
-              <TrendingUp className="w-8 h-8 text-brand-yellow mb-4" />
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20">
+              <TrendingUp className="w-8 h-8 text-brand-coral mb-4" />
               <h4 className="text-lg font-semibold mb-2">Annual ROI</h4>
-              <p className="text-3xl font-bold text-brand-yellow">${annualSavings.toLocaleString()}</p>
-              <p className="text-sm text-neutral-400">vs. ${(providers * 1800).toLocaleString()} platform cost</p>
-              <p className="text-lg font-bold text-green-400 mt-2">
+              <p className="text-3xl font-bold text-brand-coral">${annualSavings.toLocaleString()}</p>
+              <p className="text-sm text-neutral-300">vs. ${(providers * 1800).toLocaleString()} platform cost</p>
+              <p className="text-lg font-bold text-brand-peach mt-2">
                 {Math.round((annualSavings / (providers * 1800) - 1) * 100)}x ROI
               </p>
             </div>
@@ -116,7 +116,7 @@ const ROICalculatorSection = () => {
           <p className="text-neutral-300 mb-6">
             Plus 50% cost savings vs. traditional EHR systems
           </p>
-          <button className="bg-brand-yellow text-black px-8 py-4 rounded-full font-semibold hover:bg-brand-lime transition-colors">
+          <button className="bg-gradient-to-r from-brand-pink to-brand-coral text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg hover:shadow-brand-pink/30 transition-all">
             Start Saving Today - Free Trial
           </button>
         </div>

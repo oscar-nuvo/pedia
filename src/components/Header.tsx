@@ -8,24 +8,24 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-brand-lavender to-brand-purple rounded-full flex items-center justify-center">
               <Heart className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-black">PediatricAI</span>
+            <span className="text-xl font-bold text-neutral-800">PediatricAI</span>
           </div>
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-neutral-600 hover:text-black transition-colors">
+            <a href="#features" className="text-neutral-600 hover:text-brand-purple transition-colors">
               Features
             </a>
-            <a href="#solutions" className="text-neutral-600 hover:text-black transition-colors">
+            <a href="#solutions" className="text-neutral-600 hover:text-brand-purple transition-colors">
               Solutions
             </a>
-            <a href="#pricing" className="text-neutral-600 hover:text-black transition-colors">
+            <a href="#pricing" className="text-neutral-600 hover:text-brand-purple transition-colors">
               Pricing
             </a>
-            <a href="#resources" className="text-neutral-600 hover:text-black transition-colors">
+            <a href="#resources" className="text-neutral-600 hover:text-brand-purple transition-colors">
               Resources
             </a>
           </nav>

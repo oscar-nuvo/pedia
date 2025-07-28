@@ -68,7 +68,7 @@ const ComparisonSection = () => {
     <section className="py-24 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-4xl font-bold text-black mb-4">
+          <h2 className="text-3xl lg:text-4xl font-bold text-neutral-800 mb-4">
             PediatricAI vs. Traditional EHR Systems
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
@@ -83,8 +83,8 @@ const ComparisonSection = () => {
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-neutral-600">Feature</h3>
               </div>
-              <div className="p-6 bg-brand-yellow">
-                <h3 className="text-lg font-bold text-black">PediatricAI</h3>
+              <div className="p-6 bg-gradient-to-r from-brand-lavender to-brand-purple">
+                <h3 className="text-lg font-bold text-white">PediatricAI</h3>
               </div>
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-neutral-600">Traditional EHR</h3>
@@ -102,15 +102,15 @@ const ComparisonSection = () => {
                 <div className="p-6">
                   <span className="font-medium text-neutral-800">{row.feature}</span>
                 </div>
-                <div className="p-6 bg-green-50">
+                <div className="p-6 bg-brand-peach/20">
                   <div className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <span className="font-medium text-green-800">{row.pediatricAI}</span>
+                    <Check className="w-5 h-5 text-brand-purple flex-shrink-0" />
+                    <span className="font-medium text-brand-purple">{row.pediatricAI}</span>
                   </div>
                 </div>
                 <div className="p-6">
                   <div className="flex items-center gap-3">
-                    <X className="w-5 h-5 text-red-500 flex-shrink-0" />
+                    <X className="w-5 h-5 text-accent-rose flex-shrink-0" />
                     <span className="text-neutral-600">{row.traditional}</span>
                   </div>
                 </div>
@@ -120,45 +120,45 @@ const ComparisonSection = () => {
 
           {/* Bottom Summary */}
           <div className="grid md:grid-cols-2 gap-8 mt-12">
-            <div className="bg-green-50 border border-green-200 rounded-3xl p-8">
-              <h3 className="text-xl font-bold text-green-800 mb-4">With PediatricAI</h3>
-              <ul className="space-y-3 text-green-700">
+            <div className="bg-brand-peach/20 border border-brand-coral/30 rounded-3xl p-8">
+              <h3 className="text-xl font-bold text-brand-purple mb-4">With PediatricAI</h3>
+              <ul className="space-y-3 text-brand-purple">
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-brand-coral" />
                   <span>Save 2+ hours daily on documentation</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-brand-coral" />
                   <span>Start seeing patients in 30 seconds</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-brand-coral" />
                   <span>50% lower cost than competitors</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600" />
+                  <Check className="w-5 h-5 text-brand-coral" />
                   <span>Pediatric-specialized workflows</span>
                 </li>
               </ul>
             </div>
 
-            <div className="bg-red-50 border border-red-200 rounded-3xl p-8">
-              <h3 className="text-xl font-bold text-red-800 mb-4">Traditional EHR Systems</h3>
-              <ul className="space-y-3 text-red-700">
+            <div className="bg-accent-lilac/30 border border-accent-rose/30 rounded-3xl p-8">
+              <h3 className="text-xl font-bold text-neutral-700 mb-4">Traditional EHR Systems</h3>
+              <ul className="space-y-3 text-neutral-600">
                 <li className="flex items-center gap-3">
-                  <X className="w-5 h-5 text-red-600" />
+                  <X className="w-5 h-5 text-accent-rose" />
                   <span>Months of implementation time</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <X className="w-5 h-5 text-red-600" />
+                  <X className="w-5 h-5 text-accent-rose" />
                   <span>Generic, not pediatric-focused</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <X className="w-5 h-5 text-red-600" />
+                  <X className="w-5 h-5 text-accent-rose" />
                   <span>High monthly costs and setup fees</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <X className="w-5 h-5 text-red-600" />
+                  <X className="w-5 h-5 text-accent-rose" />
                   <span>Extensive staff training required</span>
                 </li>
               </ul>
@@ -166,7 +166,7 @@ const ComparisonSection = () => {
           </div>
 
           <div className="text-center mt-12">
-            <button className="bg-black text-white px-8 py-4 rounded-full font-semibold hover:bg-neutral-800 transition-colors">
+            <button className="bg-gradient-to-r from-brand-pink to-brand-coral text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg hover:shadow-brand-pink/30 transition-all">
               Switch to PediatricAI - Free Trial
             </button>
           </div>

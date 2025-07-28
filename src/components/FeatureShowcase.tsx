@@ -41,7 +41,7 @@ const FeatureShowcase = () => {
     <section className="py-24 bg-neutral-50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-4xl font-bold text-black mb-4">
+          <h2 className="text-3xl lg:text-4xl font-bold text-neutral-800 mb-4">
             Core Features That Transform Your Practice
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
@@ -62,10 +62,10 @@ const FeatureShowcase = () => {
                 {/* Content */}
                 <div className={`space-y-6 ${!isEven ? 'lg:col-start-2' : ''}`}>
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-black rounded-3xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-brand-lavender to-brand-purple rounded-3xl flex items-center justify-center shadow-lg shadow-brand-lavender/20">
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-2xl font-bold text-black">
+                    <h3 className="text-2xl font-bold text-neutral-800">
                       {feature.title}
                     </h3>
                   </div>
@@ -77,8 +77,8 @@ const FeatureShowcase = () => {
                   <div className="space-y-3">
                     {feature.highlights.map((highlight, idx) => (
                       <div key={idx} className="flex items-center space-x-3">
-                        <CheckCircle className="w-5 h-5 text-brand-yellow flex-shrink-0" />
-                        <span className="text-black">{highlight}</span>
+                        <CheckCircle className="w-5 h-5 text-brand-coral flex-shrink-0" />
+                        <span className="text-neutral-800">{highlight}</span>
                       </div>
                     ))}
                   </div>
@@ -96,7 +96,7 @@ const FeatureShowcase = () => {
                       </div>
                     </div>
                     {/* Decorative dot */}
-                    <div className="absolute -top-4 -right-4 w-8 h-8 bg-brand-yellow rounded-full opacity-60"></div>
+                    <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-r from-brand-coral to-brand-pink rounded-full opacity-60"></div>
                   </div>
                 </div>
               </div>

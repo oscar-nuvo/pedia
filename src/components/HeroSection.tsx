@@ -29,15 +29,15 @@ const HeroSection = () => {
           {/* Content */}
           <div className="space-y-8">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full animate-fade-in">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-lavender to-brand-purple text-white px-4 py-2 rounded-full animate-fade-in">
               <Brain className="w-4 h-4" />
               <span className="text-sm font-medium">AI-First Pediatric EHR</span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl lg:text-6xl font-bold text-black leading-tight animate-fade-in">
+            <h1 className="text-4xl lg:text-6xl font-bold text-neutral-800 leading-tight animate-fade-in">
               Save{" "}
-              <span className="bg-brand-yellow px-3 py-1 rounded-2xl inline-block hover-scale">
+              <span className="bg-gradient-to-r from-brand-peach to-brand-coral text-neutral-800 px-3 py-1 rounded-2xl inline-block hover-scale">
                 {timeCount} Minutes
               </span>{" "}
               Daily with AI-First Pediatric Practice Management
@@ -53,12 +53,12 @@ const HeroSection = () => {
             {/* Key Stats */}
             <div className="flex flex-wrap gap-6 animate-fade-in">
               <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-brand-yellow" />
-                <span className="font-semibold text-black">{timeCount}min Saved Daily</span>
+                <Clock className="w-5 h-5 text-brand-coral" />
+                <span className="font-semibold text-neutral-800">{timeCount}min Saved Daily</span>
               </div>
               <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-brand-yellow" />
-                <span className="font-semibold text-black">{(practiceCount/1000).toFixed(0)}K+ Target Practices</span>
+                <Users className="w-5 h-5 text-brand-coral" />
+                <span className="font-semibold text-neutral-800">{(practiceCount/1000).toFixed(0)}K+ Target Practices</span>
               </div>
             </div>
 
@@ -96,7 +96,7 @@ const HeroSection = () => {
               <div className="flex items-center gap-3">
                 <div className="flex -space-x-2">
                   {[1,2,3,4,5].map(i => (
-                    <div key={i} className="w-8 h-8 bg-brand-yellow rounded-full border-2 border-white"></div>
+                    <div key={i} className="w-8 h-8 bg-gradient-to-r from-brand-pink to-brand-coral rounded-full border-2 border-white"></div>
                   ))}
                 </div>
                 <span className="text-sm text-neutral-600">1,000+ pediatricians switched this month</span>
@@ -116,14 +116,14 @@ const HeroSection = () => {
             </div>
             
             {/* Floating Elements */}
-            <div className="absolute -top-4 -right-4 bg-brand-yellow rounded-2xl p-4 shadow-lg animate-float">
-              <div className="text-black text-center">
+            <div className="absolute -top-4 -right-4 bg-gradient-to-r from-brand-peach to-brand-coral rounded-2xl p-4 shadow-lg shadow-brand-coral/20 animate-float">
+              <div className="text-white text-center">
                 <div className="text-2xl font-bold">30s</div>
                 <div className="text-xs">Setup Time</div>
               </div>
             </div>
             
-            <div className="absolute -bottom-4 -left-4 bg-black text-white rounded-2xl p-4 shadow-lg animate-float" style={{animationDelay: '1s'}}>
+            <div className="absolute -bottom-4 -left-4 bg-gradient-to-r from-brand-lavender to-brand-purple text-white rounded-2xl p-4 shadow-lg shadow-brand-lavender/20 animate-float" style={{animationDelay: '1s'}}>
               <div className="text-center">
                 <div className="text-2xl font-bold">95%</div>
                 <div className="text-xs">User Satisfaction</div>
@@ -131,9 +131,9 @@ const HeroSection = () => {
             </div>
 
             {/* Additional floating testimonial */}
-            <div className="absolute top-1/2 -left-8 bg-white rounded-xl p-3 shadow-lg max-w-xs animate-float" style={{animationDelay: '2s'}}>
+            <div className="absolute top-1/2 -left-8 bg-white/80 backdrop-blur-md rounded-xl p-3 shadow-lg shadow-brand-pink/10 max-w-xs animate-float border border-brand-pink/20" style={{animationDelay: '2s'}}>
               <p className="text-xs text-neutral-600">"Saves me 2+ hours daily!"</p>
-              <p className="text-xs font-semibold text-black">- Dr. Sarah Chen</p>
+              <p className="text-xs font-semibold text-brand-coral">- Dr. Sarah Chen</p>
             </div>
           </div>
         </div>
