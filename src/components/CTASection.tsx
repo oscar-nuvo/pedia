@@ -3,13 +3,13 @@ import { ArrowRight, CheckCircle } from "lucide-react";
 
 const CTASection = () => {
   return (
-    <section className="py-24 bg-gradient-to-br from-brand-peach to-accent-cream">
+    <section className="py-24 bg-gradient-to-br from-secondary-peach to-neutral-50">
       <div className="container mx-auto px-6 text-center">
         <div className="max-w-4xl mx-auto space-y-8">
-          <h2 className="text-3xl lg:text-5xl font-bold text-neutral-800">
+          <h2 className="text-3xl lg:text-5xl font-bold text-neutral-900">
             Ready to Transform Your Pediatric Practice?
           </h2>
-          <p className="text-xl text-neutral-700 leading-relaxed">
+          <p className="text-xl text-neutral-600 leading-relaxed">
             Join thousands of pediatricians who've already reduced their documentation time 
             and improved patient care with PediatricAI.
           </p>
@@ -17,16 +17,16 @@ const CTASection = () => {
           {/* Benefits List */}
           <div className="flex flex-wrap justify-center gap-6 text-left">
             <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-brand-coral" />
-              <span className="text-neutral-700">30-day free trial</span>
+              <CheckCircle className="w-5 h-5 text-secondary-orange" />
+              <span className="text-neutral-600">30-day free trial</span>
             </div>
             <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-brand-coral" />
-              <span className="text-neutral-700">No setup fees</span>
+              <CheckCircle className="w-5 h-5 text-secondary-orange" />
+              <span className="text-neutral-600">No setup fees</span>
             </div>
             <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-brand-coral" />
-              <span className="text-neutral-700">Cancel anytime</span>
+              <CheckCircle className="w-5 h-5 text-secondary-orange" />
+              <span className="text-neutral-600">Cancel anytime</span>
             </div>
           </div>
 

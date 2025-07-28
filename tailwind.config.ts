@@ -19,23 +19,33 @@ export default {
 		},
 		extend: {
 			colors: {
-				// Brand colors - Soft & Elegant
-				'brand-pink': 'hsl(var(--brand-pink))',
-				'brand-coral': 'hsl(var(--brand-coral))',
-				'brand-peach': 'hsl(var(--brand-peach))',
-				'brand-lavender': 'hsl(var(--brand-lavender))',
-				'brand-purple': 'hsl(var(--brand-purple))',
+				// Primary Colors - BluePeak System
+				'primary': {
+					DEFAULT: 'hsl(var(--primary))',
+					light: 'hsl(var(--primary-light))',
+					dark: 'hsl(var(--primary-dark))',
+					foreground: 'hsl(var(--primary-foreground))'
+				},
 				
-				// Accent colors
-				'accent-rose': 'hsl(var(--accent-rose))',
-				'accent-lilac': 'hsl(var(--accent-lilac))',
-				'accent-cream': 'hsl(var(--accent-cream))',
+				// Secondary Colors
+				'secondary': {
+					DEFAULT: 'hsl(var(--secondary))',
+					orange: 'hsl(var(--secondary-orange))',
+					purple: 'hsl(var(--secondary-purple))',
+					yellow: 'hsl(var(--secondary-yellow))',
+					peach: 'hsl(var(--secondary-peach))',
+					foreground: 'hsl(var(--secondary-foreground))'
+				},
+				
+				// Semantic Colors
+				'success': 'hsl(var(--success))',
+				'warning': 'hsl(var(--warning))',
+				'error': 'hsl(var(--error))',
 				
 				// Background colors
 				'bg-primary': 'hsl(var(--bg-primary))',
 				'bg-secondary': 'hsl(var(--bg-secondary))',
 				'bg-card': 'hsl(var(--bg-card))',
-				'bg-dark': 'hsl(var(--bg-dark))',
 				
 				// Neutral colors
 				'neutral': {
