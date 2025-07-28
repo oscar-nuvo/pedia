@@ -15,18 +15,21 @@ const Header = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-neutral-600 hover:text-black transition-colors">
-              Features
+          <nav className="hidden md:flex items-center space-x-6">
+            <a href="/overview" className="text-neutral-600 hover:text-primary transition-colors font-medium">
+              Overview
             </a>
-            <a href="#solutions" className="text-neutral-600 hover:text-black transition-colors">
-              Solutions
+            <a href="/scheduling" className="text-neutral-600 hover:text-primary transition-colors font-medium">
+              Scheduling
             </a>
-            <a href="#pricing" className="text-neutral-600 hover:text-black transition-colors">
-              Pricing
+            <a href="/documentation" className="text-neutral-600 hover:text-primary transition-colors font-medium">
+              Documentation
             </a>
-            <a href="#resources" className="text-neutral-600 hover:text-black transition-colors">
-              Resources
+            <a href="/ai-copilot" className="text-neutral-600 hover:text-primary transition-colors font-medium">
+              AI Co-Pilot
+            </a>
+            <a href="/analytics" className="text-neutral-600 hover:text-primary transition-colors font-medium">
+              Analytics
             </a>
           </nav>
 
