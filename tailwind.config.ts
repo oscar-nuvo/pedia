@@ -19,33 +19,9 @@ export default {
 		},
 		extend: {
 			colors: {
-				// Primary Colors - BluePeak System
-				'primary': {
-					DEFAULT: 'hsl(var(--primary))',
-					light: 'hsl(var(--primary-light))',
-					dark: 'hsl(var(--primary-dark))',
-					foreground: 'hsl(var(--primary-foreground))'
-				},
-				
-				// Secondary Colors
-				'secondary': {
-					DEFAULT: 'hsl(var(--secondary))',
-					orange: 'hsl(var(--secondary-orange))',
-					purple: 'hsl(var(--secondary-purple))',
-					yellow: 'hsl(var(--secondary-yellow))',
-					peach: 'hsl(var(--secondary-peach))',
-					foreground: 'hsl(var(--secondary-foreground))'
-				},
-				
-				// Semantic Colors
-				'success': 'hsl(var(--success))',
-				'warning': 'hsl(var(--warning))',
-				'error': 'hsl(var(--error))',
-				
-				// Background colors
-				'bg-primary': 'hsl(var(--bg-primary))',
-				'bg-secondary': 'hsl(var(--bg-secondary))',
-				'bg-card': 'hsl(var(--bg-card))',
+				// Brand colors
+				'brand-yellow': 'hsl(var(--brand-yellow))',
+				'brand-lime': 'hsl(var(--brand-lime))',
 				
 				// Neutral colors
 				'neutral': {

@@ -2,77 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-fade-in {
-  animation: fade-in 0.8s ease-out forwards;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.6s ease-out forwards;
-}
-
-.hover-scale {
-  transition: transform 0.3s ease;
-}
-
-.hover-scale:hover {
-  transform: scale(1.05);
-}
-
-/* BluePeak Design System - Professional & Modern */
+/* PediatricAI Design System - Clean, Modern, Efficient */
 
 @layer base {
   :root {
-    /* Primary Colors - Blue Focus */
-    --primary: 217 91% 60%;        /* #3B82F6 - Main blue */
-    --primary-light: 213 93% 68%;  /* #60A5FA - Light blue */
-    --primary-dark: 221 83% 53%;   /* #2563EB - Dark blue */
+    /* Brand Colors */
+    --brand-yellow: 77 100% 45%;
+    --brand-lime: 72 88% 52%;
     
-    /* Secondary Colors */
-    --secondary-orange: 20 90% 62%; /* #FB923C */
-    --secondary-purple: 249 58% 72%; /* #A78BFA */
-    --secondary-yellow: 55 92% 63%; /* #FDE047 */
-    --secondary-peach: 24 100% 88%; /* #FED7AA */
-    
-    /* Semantic Colors */
-    --success: 158 64% 52%;        /* #10B981 */
-    --warning: 38 92% 50%;         /* #F59E0B */
-    --error: 0 84% 60%;            /* #EF4444 */
-    
-    /* Background Colors */
-    --bg-primary: 0 0% 98%;        /* #FAFAFA - Very light neutral */
-    --bg-secondary: 0 0% 96%;      /* #F5F5F5 - Light neutral */
-    --bg-card: 0 0% 100%;          /* #FFFFFF - Pure white */
-    
-    /* Neutral Scale - BluePeak System */
-    --neutral-50: 0 0% 98%;        /* #FAFAFA */
-    --neutral-100: 0 0% 96%;       /* #F5F5F5 */
-    --neutral-200: 0 0% 90%;       /* #E5E5E5 */
-    --neutral-300: 0 0% 83%;       /* #D4D4D4 */
-    --neutral-400: 0 0% 64%;       /* #A3A3A3 */
-    --neutral-500: 0 0% 45%;       /* #737373 */
-    --neutral-600: 0 0% 32%;       /* #525252 */
-    --neutral-700: 0 0% 25%;       /* #404040 */
-    --neutral-800: 0 0% 15%;       /* #262626 */
-    --neutral-900: 0 0% 9%;        /* #171717 */
+    /* Neutral Scale */
+    --neutral-50: 0 0% 98%;
+    --neutral-100: 0 0% 96%;
+    --neutral-200: 0 0% 90%;
+    --neutral-300: 0 0% 83%;
+    --neutral-400: 0 0% 64%;
+    --neutral-500: 0 0% 45%;
+    --neutral-600: 0 0% 32%;
+    --neutral-700: 0 0% 25%;
+    --neutral-800: 0 0% 15%;
+    --neutral-900: 0 0% 9%;
 
     /* Core Colors */
     --background: 0 0% 100%;
@@ -83,16 +31,16 @@
     --muted-foreground: 0 0% 45%;
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 335 100% 85%;
+    --ring: 77 100% 45%;
 
-    /* Component Colors - BluePeak System */
-    --primary: 217 91% 60%;        /* Blue primary */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;         /* Light neutral */
-    --secondary-foreground: 0 0% 15%;
-    --accent: 217 91% 60%;         /* Blue accent */
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;      /* Error red */
+    /* Component Colors */
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --accent: 77 100% 45%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
     /* Popover */
