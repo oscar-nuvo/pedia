@@ -38,13 +38,13 @@ const features = [
 
 const FeatureShowcase = () => {
   return (
-    <section className="py-24 bg-muted">
+    <section className="py-24 bg-neutral-50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl lg:text-4xl font-bold text-black mb-4">
             Core Features That Transform Your Practice
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
             Every feature is designed with pediatric workflows in mind, powered by AI to maximize 
             efficiency and minimize administrative burden.
           </p>
@@ -62,23 +62,23 @@ const FeatureShowcase = () => {
                 {/* Content */}
                 <div className={`space-y-6 ${!isEven ? 'lg:col-start-2' : ''}`}>
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-primary-light rounded-lg flex items-center justify-center">
-                      <Icon className="w-6 h-6 text-primary" />
+                    <div className="w-12 h-12 bg-black rounded-3xl flex items-center justify-center">
+                      <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-2xl font-bold text-foreground">
+                    <h3 className="text-2xl font-bold text-black">
                       {feature.title}
                     </h3>
                   </div>
                   
-                  <p className="text-lg text-muted-foreground leading-relaxed">
+                  <p className="text-lg text-neutral-600 leading-relaxed">
                     {feature.description}
                   </p>
                   
                   <div className="space-y-3">
                     {feature.highlights.map((highlight, idx) => (
                       <div key={idx} className="flex items-center space-x-3">
-                        <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0" />
-                        <span className="text-foreground">{highlight}</span>
+                        <CheckCircle className="w-5 h-5 text-brand-yellow flex-shrink-0" />
+                        <span className="text-black">{highlight}</span>
                       </div>
                     ))}
                   </div>
@@ -87,16 +87,16 @@ const FeatureShowcase = () => {
                 {/* Visual Placeholder */}
                 <div className={`${!isEven ? 'lg:col-start-1' : ''}`}>
                   <div className="relative">
-                    <div className="bg-gradient-subtle rounded-2xl p-8 shadow-medium">
-                      <div className="aspect-video bg-background rounded-lg border-2 border-dashed border-border flex items-center justify-center">
+                    <div className="bg-white rounded-3xl p-8 shadow-xl">
+                      <div className="aspect-video bg-neutral-50 rounded-3xl border-2 border-dashed border-neutral-300 flex items-center justify-center">
                         <div className="text-center space-y-2">
-                          <Icon className="w-8 h-8 text-muted-foreground mx-auto" />
-                          <p className="text-sm text-muted-foreground">Feature Demo</p>
+                          <Icon className="w-8 h-8 text-neutral-400 mx-auto" />
+                          <p className="text-sm text-neutral-600">Feature Demo</p>
                         </div>
                       </div>
                     </div>
                     {/* Decorative dot */}
-                    <div className="absolute -top-4 -right-4 w-8 h-8 bg-accent rounded-full opacity-60"></div>
+                    <div className="absolute -top-4 -right-4 w-8 h-8 bg-brand-yellow rounded-full opacity-60"></div>
                   </div>
                 </div>
               </div>

@@ -2,64 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PediatricAI Design System - Healthcare-focused with modern efficiency 
-All colors MUST be HSL.
-*/
+/* PediatricAI Design System - Clean, Modern, Efficient */
 
 @layer base {
   :root {
-    /* Core neutral palette */
+    /* Brand Colors */
+    --brand-yellow: 77 100% 45%;
+    --brand-lime: 72 88% 52%;
+    
+    /* Neutral Scale */
+    --neutral-50: 0 0% 98%;
+    --neutral-100: 0 0% 96%;
+    --neutral-200: 0 0% 90%;
+    --neutral-300: 0 0% 83%;
+    --neutral-400: 0 0% 64%;
+    --neutral-500: 0 0% 45%;
+    --neutral-600: 0 0% 32%;
+    --neutral-700: 0 0% 25%;
+    --neutral-800: 0 0% 15%;
+    --neutral-900: 0 0% 9%;
+
+    /* Core Colors */
     --background: 0 0% 100%;
-    --foreground: 220 15% 25%;
-
+    --foreground: 0 0% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 25%;
+    --card-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 77 100% 45%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 25%;
-
-    /* Medical blue primary - trustworthy and professional */
-    --primary: 208 100% 47%;
+    /* Component Colors */
+    --primary: 0 0% 9%;
     --primary-foreground: 0 0% 98%;
-    --primary-light: 208 100% 85%;
-    --primary-dark: 208 100% 35%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --accent: 77 100% 45%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    /* Healthcare green secondary - health and growth */
-    --secondary: 152 60% 50%;
-    --secondary-foreground: 0 0% 98%;
-    --secondary-light: 152 60% 85%;
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
 
-    /* Subtle backgrounds */
-    --muted: 210 40% 98%;
-    --muted-foreground: 220 15% 60%;
-
-    /* Warm accent for highlights */
-    --accent: 32 95% 65%;
-    --accent-foreground: 220 15% 25%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
-    --ring: 208 100% 47%;
-
-    /* Gradients for modern appeal */
-    --gradient-primary: linear-gradient(135deg, hsl(208 100% 47%), hsl(208 100% 35%));
-    --gradient-secondary: linear-gradient(135deg, hsl(152 60% 50%), hsl(152 60% 40%));
-    --gradient-hero: linear-gradient(135deg, hsl(208 100% 47%), hsl(152 60% 50%));
-    --gradient-subtle: linear-gradient(180deg, hsl(210 40% 98%), hsl(0 0% 100%));
-
-    /* Shadows */
-    --shadow-soft: 0 4px 20px hsl(220 15% 25% / 0.1);
-    --shadow-medium: 0 8px 30px hsl(220 15% 25% / 0.15);
-    --shadow-strong: 0 15px 40px hsl(220 15% 25% / 0.2);
-
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-
-    --radius: 0.5rem;
+    --radius: 1.5rem;
 
     --sidebar-background: 0 0% 98%;
 

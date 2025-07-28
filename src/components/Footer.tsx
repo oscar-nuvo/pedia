@@ -2,14 +2,14 @@ import { Heart } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-foreground text-background py-16">
+    <footer className="bg-black text-white py-16">
       <div className="container mx-auto px-6">
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           {/* Logo & Description */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Heart className="w-5 h-5 text-primary-foreground" />
+              <div className="w-8 h-8 bg-brand-yellow rounded-full flex items-center justify-center">
+                <Heart className="w-5 h-5 text-black" />
               </div>
               <span className="text-xl font-bold">PediatricAI</span>
             </div>
@@ -54,7 +54,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom */}
-        <div className="border-t border-background/20 pt-8 flex flex-col md:flex-row justify-between items-center">
+        <div className="border-t border-neutral-800 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm opacity-60">
             © 2024 PediatricAI. All rights reserved.
           </p>

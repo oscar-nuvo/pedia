@@ -41,13 +41,13 @@ const benefits = [
 
 const BenefitsSection = () => {
   return (
-    <section className="py-24 bg-background">
+    <section className="py-24 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl lg:text-4xl font-bold text-black mb-4">
             Why Pediatricians Choose PediatricAI
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
             Built specifically for pediatric practices, our AI-first platform eliminates administrative 
             burden so you can focus on what matters most—your patients.
           </p>
@@ -57,22 +57,22 @@ const BenefitsSection = () => {
           {benefits.map((benefit, index) => {
             const Icon = benefit.icon;
             return (
-              <div key={index} className="group p-8 rounded-xl bg-card border border-border hover:shadow-medium transition-all duration-300">
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-6 ${
-                  benefit.color === 'primary' ? 'bg-primary-light' :
-                  benefit.color === 'secondary' ? 'bg-secondary-light' :
-                  'bg-accent/20'
+              <div key={index} className="group p-8 rounded-3xl bg-white border border-neutral-200 hover:shadow-xl transition-all duration-300">
+                <div className={`w-12 h-12 rounded-3xl flex items-center justify-center mb-6 ${
+                  benefit.color === 'primary' ? 'bg-black' :
+                  benefit.color === 'secondary' ? 'bg-neutral-100' :
+                  'bg-brand-yellow'
                 }`}>
                   <Icon className={`w-6 h-6 ${
-                    benefit.color === 'primary' ? 'text-primary' :
-                    benefit.color === 'secondary' ? 'text-secondary' :
-                    'text-accent'
+                    benefit.color === 'primary' ? 'text-white' :
+                    benefit.color === 'secondary' ? 'text-black' :
+                    'text-black'
                   }`} />
                 </div>
-                <h3 className="text-xl font-semibold text-foreground mb-3">
+                <h3 className="text-xl font-semibold text-black mb-3">
                   {benefit.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-neutral-600 leading-relaxed">
                   {benefit.description}
                 </p>
               </div>
