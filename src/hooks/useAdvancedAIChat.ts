@@ -340,7 +340,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         }
       }
     } finally {
-      setStreamingState(prev => ({ ...prev, isStreaming: false, streamingMessage: '' }));
+      // Don't clear streaming message here - let response_complete handle it
       
       // Invalidate queries to refresh messages
       queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
@@ -429,9 +429,10 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         break;
 
       case 'response_complete':
+        // Keep message visible during database save
         setStreamingState(prev => ({
           ...prev,
-          progress: { type: 'text', status: 'Complete' }
+          progress: { type: 'text', status: 'Saving message...' }
         }));
         
         // Enhanced token usage logging for Responses API
@@ -455,6 +456,16 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         if (event.responseId) {
           console.log('Response ID for conversation continuity:', event.responseId);
         }
+
+        // Small delay to ensure message is visible before clearing
+        setTimeout(() => {
+          setStreamingState(prev => ({
+            ...prev,
+            isStreaming: false,
+            streamingMessage: '',
+            progress: { type: 'text', status: 'Complete' }
+          }));
+        }, 1000);
         break;
 
       case 'stream_error':

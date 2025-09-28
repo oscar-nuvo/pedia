@@ -92,6 +92,7 @@ export type Database = {
           created_at: string | null
           id: string
           metadata: Json | null
+          response_id: string | null
           role: string
         }
         Insert: {
@@ -100,6 +101,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           metadata?: Json | null
+          response_id?: string | null
           role: string
         }
         Update: {
@@ -108,6 +110,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           metadata?: Json | null
+          response_id?: string | null
           role?: string
         }
         Relationships: [

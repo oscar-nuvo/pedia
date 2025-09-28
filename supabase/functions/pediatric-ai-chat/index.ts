@@ -173,16 +173,13 @@ serve(async (req) => {
     ];
 
     // Get previous response ID for conversation continuity
-    const { data: lastMessage } = await supabase
-      .from('messages')
+    const { data: conversation } = await supabase
+      .from('conversations')
       .select('metadata')
-      .eq('conversation_id', conversationId)
-      .eq('role', 'assistant')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .eq('id', conversationId)
+      .single();
 
-    const previousResponseId = lastMessage?.metadata?.responseId;
+    const previousResponseId = conversation?.metadata?.responseId;
 
     // Create OpenAI Responses API request with prompt library
     const response = await fetch('https://api.openai.com/v1/responses', {
@@ -304,6 +301,7 @@ serve(async (req) => {
                           conversation_id: conversationId,
                           role: 'assistant',
                           content: assistantContent.trim(),
+                          response_id: currentResponseId,
                           metadata: { 
                             prompt_id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f", 
                             responseId: currentResponseId,
@@ -316,6 +314,18 @@ serve(async (req) => {
                         console.error('Error saving assistant message:', assistantMsgError);
                       } else {
                         console.log('Saved assistant message with response ID:', currentResponseId);
+                        
+                        // Update conversation metadata with latest response ID
+                        await supabase
+                          .from('conversations')
+                          .update({
+                            metadata: {
+                              ...conversation?.metadata,
+                              responseId: currentResponseId,
+                              lastResponseAt: new Date().toISOString()
+                            }
+                          })
+                          .eq('id', conversationId);
                       }
                     }
 
@@ -323,7 +333,8 @@ serve(async (req) => {
                       type: 'response_complete',
                       usage: parsed.response?.usage,
                       responseId: currentResponseId,
-                      reasoningTokens: parsed.response?.usage?.reasoning_tokens
+                      reasoningTokens: parsed.response?.usage?.reasoning_tokens,
+                      content: assistantContent.trim()
                     })}\n\n`));
                   }
                 } catch (parseError) {
