@@ -1,16 +1,106 @@
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bot, MessageSquare, Lightbulb, Search, Brain, Stethoscope } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { Bot, MessageSquare, Lightbulb, Search, Brain, Stethoscope, Plus, Send, StopCircle } from "lucide-react";
+import { useAIChat, Message } from "@/hooks/useAIChat";
+import { useAuth } from "@/hooks/useAuth";
+import { format } from "date-fns";
 
 const AICopilot = () => {
-  const recentQueries = [
-    { query: "Amoxicillin dose for 15kg child with otitis media", response: "375mg twice daily", confidence: "98%" },
-    { query: "Normal heart rate range for 3-year-old", response: "80-120 bpm at rest", confidence: "95%" },
-    { query: "When to refer for growth concerns", response: "Height <3rd percentile or crossing 2+ lines", confidence: "92%" }
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [inputMessage, setInputMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    conversations,
+    messages,
+    currentConversationId,
+    isStreaming,
+    streamingMessage,
+    conversationsLoading,
+    messagesLoading,
+    sendMessage,
+    isSendingMessage,
+    startNewConversation,
+    selectConversation,
+    stopStreaming,
+  } = useAIChat();
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, streamingMessage]);
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isSendingMessage) return;
+    
+    const message = inputMessage.trim();
+    setInputMessage("");
+    
+    try {
+      await sendMessage({ message });
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const renderMessage = (message: Message) => {
+    const isUser = message.role === "user";
+    return (
+      <div key={message.id} className={`flex items-start space-x-3 ${isUser ? "flex-row-reverse space-x-reverse" : ""}`}>
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+          isUser ? "bg-brand-yellow text-black" : "bg-primary text-white"
+        }`}>
+          {isUser ? "U" : <Bot className="w-4 h-4" />}
+        </div>
+        <div className={`p-3 rounded-xl max-w-md ${
+          isUser ? "bg-brand-yellow text-black" : "bg-white text-neutral-800"
+        }`}>
+          <p className="whitespace-pre-wrap">{message.content}</p>
+          <p className="text-xs opacity-70 mt-1">
+            {format(new Date(message.created_at), 'HH:mm')}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const exampleQueries = [
+    "What's the amoxicillin dose for a 15kg child with otitis media?",
+    "Normal heart rate range for a 3-year-old?",
+    "When should I refer for growth concerns?"
   ];
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <p className="text-center text-neutral-600">Please log in to access the AI Assistant.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-50">
+      {/* Header */}
       <div className="bg-white border-b border-neutral-200 px-6 py-4">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-neutral-900">Pediatric AI Co-Pilot</h1>
@@ -19,7 +109,49 @@ const AICopilot = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Conversation History Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="h-[600px] flex flex-col">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Conversations</CardTitle>
+                  <Button size="sm" onClick={startNewConversation} className="h-8 w-8 p-0">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 p-0">
+                <ScrollArea className="h-full px-4">
+                  {conversationsLoading ? (
+                    <div className="text-center text-neutral-500 py-4">Loading...</div>
+                  ) : conversations.length === 0 ? (
+                    <div className="text-center text-neutral-500 py-4">No conversations yet</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {conversations.map((conversation) => (
+                        <button
+                          key={conversation.id}
+                          onClick={() => selectConversation(conversation.id)}
+                          className={`w-full p-3 text-left rounded-lg transition-colors ${
+                            currentConversationId === conversation.id
+                              ? "bg-brand-yellow text-black"
+                              : "bg-neutral-100 hover:bg-neutral-200 text-neutral-800"
+                          }`}
+                        >
+                          <p className="font-medium truncate">{conversation.title}</p>
+                          <p className="text-xs opacity-70">
+                            {format(new Date(conversation.updated_at), 'MMM d, HH:mm')}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* AI Chat Interface */}
           <div className="lg:col-span-2">
             <Card className="h-[600px] flex flex-col">
@@ -27,96 +159,138 @@ const AICopilot = () => {
                 <CardTitle className="flex items-center">
                   <Bot className="w-5 h-5 mr-2 text-primary" />
                   AI Assistant
+                  {isStreaming && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={stopStreaming}
+                      className="ml-auto"
+                    >
+                      <StopCircle className="w-4 h-4 mr-1" />
+                      Stop
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
-                <div className="flex-1 bg-neutral-50 rounded-xl p-4 mb-4 overflow-y-auto">
+                <ScrollArea className="flex-1 bg-neutral-50 rounded-xl p-4 mb-4">
                   <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                        <Bot className="w-4 h-4 text-white" />
+                    {/* Welcome message */}
+                    {messages.length === 0 && !streamingMessage && (
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                          <Bot className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="bg-white p-3 rounded-xl max-w-md">
+                          <p className="text-neutral-800">
+                            Hello! I'm your pediatric AI assistant. I can help with clinical questions, 
+                            drug dosing, guidelines, and patient-specific insights. What can I assist you with today?
+                          </p>
+                        </div>
                       </div>
-                      <div className="bg-white p-3 rounded-xl max-w-md">
-                        <p className="text-neutral-800">Hello Dr. Chen! I'm here to help with clinical questions, drug dosing, guidelines, and patient-specific insights. What can I assist you with today?</p>
+                    )}
+                    
+                    {/* Messages */}
+                    {messages.map(renderMessage)}
+                    
+                    {/* Streaming message */}
+                    {streamingMessage && (
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                          <Bot className="w-4 h-4 text-white animate-pulse" />
+                        </div>
+                        <div className="bg-white p-3 rounded-xl max-w-md">
+                          <p className="text-neutral-800 whitespace-pre-wrap">{streamingMessage}</p>
+                          <div className="w-2 h-4 bg-primary rounded animate-pulse inline-block ml-1"></div>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    
+                    <div ref={messagesEndRef} />
                   </div>
-                </div>
+                </ScrollArea>
                 
+                {/* Input area */}
                 <div className="flex space-x-2">
-                  <input 
-                    type="text" 
+                  <Input
+                    ref={inputRef}
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
                     placeholder="Ask about dosing, guidelines, patient care..."
-                    className="flex-1 px-4 py-2 border border-neutral-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
+                    disabled={isSendingMessage || isStreaming}
+                    className="flex-1"
                   />
-                  <Button size="sm" className="rounded-full">
-                    <MessageSquare className="w-4 h-4" />
+                  <Button 
+                    size="sm" 
+                    onClick={handleSendMessage}
+                    disabled={!inputMessage.trim() || isSendingMessage || isStreaming}
+                    className="rounded-full px-4"
+                  >
+                    <Send className="w-4 h-4" />
                   </Button>
                 </div>
                 
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <Button variant="outline" size="sm" className="text-xs">
-                    Dosing Calculator
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs">
-                    Growth Charts
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs">
-                    AAP Guidelines
-                  </Button>
-                </div>
+                {/* Example queries */}
+                {messages.length === 0 && !streamingMessage && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {exampleQueries.map((query, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInputMessage(query)}
+                        className="text-xs"
+                      >
+                        {query}
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Features */}
+          {/* Right Sidebar - Quick Features */}
+          <div className="lg:col-span-1 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Quick Features</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => setInputMessage("Calculate dosage for ")}
+                  >
                     <Brain className="w-4 h-4 mr-2" />
                     Clinical Decision Support
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => setInputMessage("Check drug interactions for ")}
+                  >
                     <Search className="w-4 h-4 mr-2" />
                     Drug Interaction Checker
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => setInputMessage("Differential diagnosis for ")}
+                  >
                     <Stethoscope className="w-4 h-4 mr-2" />
                     Differential Diagnosis
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => setInputMessage("Screening recommendations for ")}
+                  >
                     <Lightbulb className="w-4 h-4 mr-2" />
                     Screening Reminders
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Queries */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Recent Queries</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentQueries.map((item, index) => (
-                    <div key={index} className="p-3 bg-neutral-50 rounded-xl">
-                      <p className="text-sm font-medium text-neutral-800 mb-1">{item.query}</p>
-                      <p className="text-sm text-primary mb-2">{item.response}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-success">Confidence: {item.confidence}</span>
-                        <Button variant="ghost" size="sm" className="text-xs">
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </CardContent>
             </Card>

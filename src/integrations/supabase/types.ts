@@ -14,6 +14,112 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversation_files: {
+        Row: {
+          content_type: string | null
+          conversation_id: string
+          filename: string
+          id: string
+          openai_file_id: string
+          size_bytes: number | null
+          uploaded_at: string | null
+        }
+        Insert: {
+          content_type?: string | null
+          conversation_id: string
+          filename: string
+          id?: string
+          openai_file_id: string
+          size_bytes?: number | null
+          uploaded_at?: string | null
+        }
+        Update: {
+          content_type?: string | null
+          conversation_id?: string
+          filename?: string
+          id?: string
+          openai_file_id?: string
+          size_bytes?: number | null
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_files_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          openai_thread_id: string | null
+          patient_id: string | null
+          title: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          openai_thread_id?: string | null
+          patient_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          openai_thread_id?: string | null
+          patient_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           address: string | null
