@@ -155,7 +155,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
           user_id: user.id,
           title,
           metadata: {
-            model: 'gpt-4o',
+            prompt_id: 'pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f',
             messageCount: 0,
             fileIds: [],
             reasoningItems: []
