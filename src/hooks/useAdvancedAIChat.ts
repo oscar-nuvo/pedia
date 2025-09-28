@@ -239,8 +239,9 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         patientContext,
         taskType,
         options: {
-          reasoningEffort: options.reasoningEffort || 'medium',
+          reasoningEffort: options.reasoningEffort || 'high',
           includeReasoningSummary: options.includeReasoningSummary ?? streamingState.showReasoning,
+          background: taskType ? true : false,
           ...options
         }
       };
@@ -356,13 +357,6 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         }));
         break;
 
-      case 'processing':
-        setStreamingState(prev => ({
-          ...prev,
-          progress: { type: 'reasoning', status: 'Processing request...' }
-        }));
-        break;
-
       case 'text_delta':
         context.setAccumulatedContent(context.accumulatedContent + event.delta);
         setStreamingState(prev => ({
@@ -394,7 +388,11 @@ export const useAdvancedAIChat = (conversationId?: string) => {
 
       case 'function_arguments_delta':
         const callId = event.callId;
-        const existing = context.functionCallsBuffer.get(callId) || { name: '', arguments: '', startTime: Date.now() };
+        const existing = context.functionCallsBuffer.get(callId) || { 
+          name: event.function_name || 'unknown', 
+          arguments: '', 
+          startTime: Date.now() 
+        };
         existing.arguments += event.delta;
         context.functionCallsBuffer.set(callId, existing);
         
@@ -413,7 +411,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         const functionCall: FunctionCall = {
           id: crypto.randomUUID(),
           name: event.function_name,
-          arguments: {},
+          arguments: context.functionCallsBuffer.get(event.callId)?.arguments || '{}',
           result: event.result,
           duration: Date.now() - (context.functionCallsBuffer.get(event.callId)?.startTime || Date.now()),
           status: event.result.error ? 'error' : 'success'
@@ -425,18 +423,9 @@ export const useAdvancedAIChat = (conversationId?: string) => {
           currentFunction: undefined,
           progress: { type: 'function', status: `${event.function_name} completed` }
         }));
-        break;
 
-      case 'image_preview':
-        setStreamingState(prev => ({
-          ...prev,
-          images: [...prev.images, event.previewUrl],
-          progress: { 
-            type: 'image', 
-            status: 'Generating image...', 
-            percentage: event.progress 
-          }
-        }));
+        // Clean up function call buffer
+        context.functionCallsBuffer.delete(event.callId);
         break;
 
       case 'response_complete':
@@ -445,12 +434,26 @@ export const useAdvancedAIChat = (conversationId?: string) => {
           progress: { type: 'text', status: 'Complete' }
         }));
         
-        // Display token usage info
+        // Enhanced token usage logging for Responses API
         if (event.usage) {
           console.log('Token usage:', event.usage);
           if (event.reasoningTokens) {
             console.log('Reasoning tokens:', event.reasoningTokens);
           }
+          
+          // Show reasoning token usage to user if significant
+          if (event.reasoningTokens && event.reasoningTokens > 1000) {
+            toast({
+              title: "Complex Analysis Completed",
+              description: `Used ${event.reasoningTokens} reasoning tokens for thorough analysis`,
+              variant: "default",
+            });
+          }
+        }
+
+        // Display response ID for debugging
+        if (event.responseId) {
+          console.log('Response ID for conversation continuity:', event.responseId);
         }
         break;
 
@@ -472,8 +475,28 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         }
         break;
 
+      // Handle legacy events for backward compatibility
+      case 'processing':
+        setStreamingState(prev => ({
+          ...prev,
+          progress: { type: 'reasoning', status: 'Processing request...' }
+        }));
+        break;
+
+      case 'image_preview':
+        setStreamingState(prev => ({
+          ...prev,
+          images: [...prev.images, event.previewUrl],
+          progress: { 
+            type: 'image', 
+            status: 'Generating image...', 
+            percentage: event.progress 
+          }
+        }));
+        break;
+
       default:
-        console.log('Unhandled event:', event);
+        console.log('Unhandled Responses API event:', event);
     }
   };
 

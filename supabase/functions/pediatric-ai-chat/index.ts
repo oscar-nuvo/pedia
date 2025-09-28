@@ -135,8 +135,20 @@ Show calculations step-by-step for dosing and include confidence levels.`;
       }
     ];
 
-    // Create OpenAI request
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Get previous response ID for conversation continuity
+    const { data: lastMessage } = await supabase
+      .from('messages')
+      .select('metadata')
+      .eq('conversation_id', conversationId)
+      .eq('role', 'assistant')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const previousResponseId = lastMessage?.metadata?.responseId;
+
+    // Create OpenAI Responses API request
+    const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
@@ -144,14 +156,16 @@ Show calculations step-by-step for dosing and include confidence levels.`;
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        messages,
+        input: messages,
         tools,
         tool_choice: 'auto',
         stream: true,
-        temperature: 0.3,
-        max_tokens: 4000,
-        presence_penalty: 0.1,
-        frequency_penalty: 0.1
+        store: true,
+        reasoning_effort: 'high',
+        include: ['reasoning.summary'],
+        background: options.background || false,
+        ...(previousResponseId && { previous_response_id: previousResponseId }),
+        max_completion_tokens: 4000
       }),
     });
 
@@ -159,9 +173,11 @@ Show calculations step-by-step for dosing and include confidence levels.`;
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    console.log(`Making OpenAI request for conversation: ${conversationId}`);
+    console.log(`Making OpenAI Responses API request for conversation: ${conversationId}`);
 
     let assistantContent = '';
+    let currentResponseId = '';
+    let reasoningSummary = '';
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -172,6 +188,10 @@ Show calculations step-by-step for dosing and include confidence levels.`;
         }
 
         try {
+          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+            type: 'response_started'
+          })}\n\n`));
+
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -186,33 +206,59 @@ Show calculations step-by-step for dosing and include confidence levels.`;
 
                 try {
                   const parsed = JSON.parse(data);
+                  console.log('Responses API event:', parsed.type);
                   
-                  if (parsed.choices?.[0]?.delta?.content) {
-                    assistantContent += parsed.choices[0].delta.content;
+                  // Handle Responses API events
+                  if (parsed.type === 'response.output_text.delta') {
+                    assistantContent += parsed.delta;
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
                       type: 'text_delta',
-                      delta: parsed.choices[0].delta.content
+                      delta: parsed.delta
                     })}\n\n`));
-                  } else if (parsed.choices?.[0]?.delta?.tool_calls) {
-                    const toolCall = parsed.choices[0].delta.tool_calls[0];
-                    if (toolCall.function?.name && toolCall.function?.arguments) {
-                      try {
-                        const result = await handleFunctionCall({
-                          name: toolCall.function.name,
-                          arguments: toolCall.function.arguments
-                        });
-                        
-                        controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
-                          type: 'function_result',
-                          function_name: toolCall.function.name,
-                          result
-                        })}\n\n`));
-                      } catch (fnError) {
-                        console.error('Function call error:', fnError);
-                      }
+                  } else if (parsed.type === 'response.reasoning.summary.delta') {
+                    reasoningSummary += parsed.delta;
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                      type: 'reasoning_delta',
+                      delta: parsed.delta
+                    })}\n\n`));
+                  } else if (parsed.type === 'response.reasoning.summary.done') {
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                      type: 'reasoning_complete',
+                      summary: reasoningSummary
+                    })}\n\n`));
+                  } else if (parsed.type === 'response.function_call.arguments.delta') {
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                      type: 'function_arguments_delta',
+                      callId: parsed.call_id,
+                      delta: parsed.delta
+                    })}\n\n`));
+                  } else if (parsed.type === 'response.function_call.arguments.done') {
+                    // Execute the function call
+                    try {
+                      const result = await handleFunctionCall({
+                        name: parsed.name,
+                        arguments: parsed.arguments
+                      });
+                      
+                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                        type: 'function_result',
+                        function_name: parsed.name,
+                        callId: parsed.call_id,
+                        result
+                      })}\n\n`));
+                    } catch (fnError) {
+                      console.error('Function call error:', fnError);
+                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                        type: 'function_result',
+                        function_name: parsed.name,
+                        callId: parsed.call_id,
+                        result: { error: fnError instanceof Error ? fnError.message : 'Function execution failed' }
+                      })}\n\n`));
                     }
-                  } else if (parsed.choices?.[0]?.finish_reason) {
-                    // Save assistant message
+                  } else if (parsed.type === 'response.done') {
+                    currentResponseId = parsed.response?.id || '';
+                    
+                    // Save assistant message with response ID
                     if (assistantContent.trim()) {
                       const { error: assistantMsgError } = await supabase
                         .from('messages')
@@ -220,23 +266,30 @@ Show calculations step-by-step for dosing and include confidence levels.`;
                           conversation_id: conversationId,
                           role: 'assistant',
                           content: assistantContent.trim(),
-                          metadata: { model: 'gpt-4o', tokens: parsed.usage }
+                          metadata: { 
+                            model: 'gpt-4o', 
+                            responseId: currentResponseId,
+                            reasoningSummary: reasoningSummary || undefined,
+                            usage: parsed.response?.usage
+                          }
                         });
 
                       if (assistantMsgError) {
                         console.error('Error saving assistant message:', assistantMsgError);
                       } else {
-                        console.log('Saved assistant message');
+                        console.log('Saved assistant message with response ID:', currentResponseId);
                       }
                     }
 
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
                       type: 'response_complete',
-                      usage: parsed.usage
+                      usage: parsed.response?.usage,
+                      responseId: currentResponseId,
+                      reasoningTokens: parsed.response?.usage?.reasoning_tokens
                     })}\n\n`));
                   }
                 } catch (parseError) {
-                  console.error('Error parsing streaming data:', parseError);
+                  console.error('Error parsing Responses API data:', parseError);
                 }
               }
             }
@@ -278,7 +331,7 @@ async function handleBackgroundTask(input: string, taskType: string, patientCont
     diagnosis_analysis: `Perform differential diagnosis analysis for: ${input}. Consider patient history, rank by probability with supporting evidence. Patient: ${JSON.stringify(patientContext)}`
   };
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${openaiApiKey}`,
@@ -286,17 +339,20 @@ async function handleBackgroundTask(input: string, taskType: string, patientCont
     },
     body: JSON.stringify({
       model: 'gpt-4o',
-      messages: [
+      input: [
         { role: 'system', content: 'You are a pediatric medical expert providing comprehensive analysis.' },
         { role: 'user', content: prompts[taskType as keyof typeof prompts] || input }
       ],
-      temperature: 0.1,
-      max_tokens: 8000
+      store: true,
+      background: true,
+      reasoning_effort: 'high',
+      include: ['reasoning.summary'],
+      max_completion_tokens: 8000
     }),
   });
 
   const result = await response.json();
-  return result.choices[0].message.content;
+  return result.response?.output_text || result.choices?.[0]?.message?.content || 'Analysis completed';
 }
 
 async function handleFunctionCall(functionCall: any) {
