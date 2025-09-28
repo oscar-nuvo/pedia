@@ -144,23 +144,32 @@ serve(async (req) => {
                 try {
                   const parsed = JSON.parse(data);
                   
-                  // Handle different event types
-                  if (parsed.type === 'response.output_text.delta') {
+                  // Handle different event types from Responses API
+                  if (parsed.type === 'response.created') {
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
+                  } else if (parsed.type === 'response.in_progress') {
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
+                  } else if (parsed.type === 'response.output_item.added') {
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
+                  } else if (parsed.type === 'response.content_part.added') {
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
+                  } else if (parsed.type === 'response.output_text.delta') {
                     assistantContent += parsed.delta;
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else if (parsed.type === 'response.function_call.start') {
+                  } else if (parsed.type === 'response.function_call_arguments.delta') {
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else if (parsed.type === 'response.function_call.arguments.delta') {
+                  } else if (parsed.type === 'response.output_item.done') {
+                    // Check if this is a function call that needs execution
+                    if (parsed.item && parsed.item.type === 'function_call') {
+                      const result = await handleFunctionCall(parsed.item);
+                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                        type: 'function_result',
+                        function_name: parsed.item.name,
+                        result
+                      })}\n\n`));
+                    }
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else if (parsed.type === 'response.function_call.done') {
-                    // Execute the function call
-                    const result = await handleFunctionCall(parsed);
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
-                      type: 'function_result',
-                      function_name: parsed.function.name,
-                      result
-                    })}\n\n`));
-                  } else if (parsed.type === 'response.done') {
+                  } else if (parsed.type === 'response.completed') {
                     // Save assistant message to database
                     if (assistantContent.trim()) {
                       const { error: assistantMsgError } = await supabase
@@ -218,10 +227,12 @@ serve(async (req) => {
 });
 
 async function handleFunctionCall(functionCall: any) {
-  const { name, arguments: args } = functionCall.function;
+  // Handle both old and new function call formats for compatibility
+  const name = functionCall.name || functionCall.function?.name;
+  const args = functionCall.arguments || functionCall.function?.arguments;
   
   try {
-    const parsedArgs = JSON.parse(args);
+    const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
     
     switch (name) {
       case 'calculate_pediatric_dosage':
