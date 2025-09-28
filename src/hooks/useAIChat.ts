@@ -123,23 +123,32 @@ export const useAIChat = (conversationId?: string) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No active session');
 
-      const { data, error } = await supabase.functions.invoke('pediatric-ai-chat', {
-        body: {
+      // Use fetch directly for streaming response
+      const response = await fetch(`https://pgypyipdmrhrutegapsx.supabase.co/functions/v1/pediatric-ai-chat`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBneXB5aXBkbXJocnV0ZWdhcHN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTQzNDcsImV4cCI6MjA3NDU5MDM0N30.nJivPOj9ygfDFJZ6xyVFYTeM1-BUsTy7MaOUvtF882E'
+        },
+        body: JSON.stringify({
           message,
           conversationId: conversationIdToUse,
           fileIds,
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        }),
+        signal: abortControllerRef.current?.signal
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to send message');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       // Handle streaming response  
-      const reader = data.getReader();
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Failed to get response reader');
+      }
+
       let accumulatedContent = '';
 
       try {
