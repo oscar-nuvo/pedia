@@ -105,7 +105,7 @@ serve(async (req) => {
       input: message,
       stream: true,
       tools: tools,
-      max_completion_tokens: 1000,
+      max_output_tokens: 1000,
       store: true
     };
 
