@@ -88,7 +88,7 @@ serve(async (req) => {
           role: "system",
           content: [
             {
-              type: "text",
+              type: "input_text",
               text: `Patient Context: ${JSON.stringify(patientContext)}`
             }
           ]
@@ -101,7 +101,7 @@ serve(async (req) => {
           role: msg.role,
           content: [
             {
-              type: msg.role === "assistant" ? "output_text" : "text", 
+              type: msg.role === "assistant" ? "output_text" : "input_text", 
               text: msg.content
             }
           ]
@@ -114,7 +114,7 @@ serve(async (req) => {
           role: "user",
           content: [
             {
-              type: "text",
+              type: "input_text",
               text: message
             }
           ]
@@ -127,7 +127,7 @@ serve(async (req) => {
           role: "system",
           content: [
             {
-              type: "text",
+              type: "input_text",
               text: `File IDs referenced: ${fileIds.join(', ')}`
             }
           ]
