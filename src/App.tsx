@@ -12,7 +12,7 @@ import NotFound from "./pages/NotFound";
 import Overview from "./pages/Overview";
 import Scheduling from "./pages/Scheduling";
 import Documentation from "./pages/Documentation";
-import AICopilot from "./pages/AICopilot";
+
 import AdvancedChatInterface from "@/components/chat/AdvancedChatInterface";
 import AdminAgents from "./pages/AdminAgents";
 import ParentPortal from "./pages/ParentPortal";

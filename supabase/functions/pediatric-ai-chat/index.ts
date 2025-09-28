@@ -245,7 +245,7 @@ Show calculations step-by-step for dosing and include confidence levels.`;
           console.error('Streaming error:', error);
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
             type: 'stream_error',
-            error: error.message
+            error: error instanceof Error ? error.message : 'Unknown error'
           })}\n\n`));
         } finally {
           controller.close();
@@ -264,7 +264,7 @@ Show calculations step-by-step for dosing and include confidence levels.`;
 
   } catch (error) {
     console.error('Error in pediatric-ai-chat function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -288,7 +288,7 @@ async function handleBackgroundTask(input: string, taskType: string, patientCont
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: 'You are a pediatric medical expert providing comprehensive analysis.' },
-        { role: 'user', content: prompts[taskType] || input }
+        { role: 'user', content: prompts[taskType as keyof typeof prompts] || input }
       ],
       temperature: 0.1,
       max_tokens: 8000
@@ -315,7 +315,7 @@ async function handleFunctionCall(functionCall: any) {
     }
   } catch (error) {
     console.error(`Error in function ${name}:`, error);
-    return { error: `Function execution failed: ${error.message}` };
+    return { error: `Function execution failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
   }
 }
 
@@ -334,25 +334,25 @@ async function calculatePediatricDosage(params: any) {
     }
   };
 
-  const med = medications[medication.toLowerCase()];
-  if (!med || !med[route]) {
+  const med = medications[medication.toLowerCase() as keyof typeof medications];
+  if (!med || !med[route as keyof typeof med]) {
     return {
       error: `Dosing information not available for ${medication} via ${route} route`,
       recommendation: 'Please consult drug reference or pharmacist for accurate dosing'
     };
   }
 
-  const dosing = med[route];
-  let calculatedDose;
+  const dosing = med[route as keyof typeof med];
+  let calculatedDose = 0;
   const warnings = [];
 
-  if (dosing.dose_mg_kg_day) {
+  if ('dose_mg_kg_day' in dosing) {
     calculatedDose = weight_kg * dosing.dose_mg_kg_day;
     if (dosing.max_dose_mg_day && calculatedDose > dosing.max_dose_mg_day) {
       calculatedDose = dosing.max_dose_mg_day;
       warnings.push(`Dose capped at maximum daily dose of ${dosing.max_dose_mg_day}mg`);
     }
-  } else if (dosing.dose_mg_kg_dose) {
+  } else if ('dose_mg_kg_dose' in dosing) {
     calculatedDose = weight_kg * dosing.dose_mg_kg_dose;
     if (dosing.max_dose_mg_dose && calculatedDose > dosing.max_dose_mg_dose) {
       calculatedDose = dosing.max_dose_mg_dose;
@@ -370,9 +370,9 @@ async function calculatePediatricDosage(params: any) {
     calculated_dose_mg: Math.round(calculatedDose * 100) / 100,
     frequency: dosing.frequency,
     route,
-    duration: dosing.duration,
+    duration: 'duration' in dosing ? dosing.duration : 'As directed',
     warnings,
-    calculation_notes: `${weight_kg}kg × ${dosing.dose_mg_kg_day || dosing.dose_mg_kg_dose}mg/kg = ${Math.round(calculatedDose * 100) / 100}mg`,
+    calculation_notes: `${weight_kg}kg × ${'dose_mg_kg_day' in dosing ? dosing.dose_mg_kg_day : dosing.dose_mg_kg_dose}mg/kg = ${Math.round(calculatedDose * 100) / 100}mg`,
     safety_note: 'Always verify dosing with current references and consider patient-specific factors'
   };
 }
