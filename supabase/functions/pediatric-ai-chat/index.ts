@@ -205,7 +205,7 @@ serve(async (req) => {
         store: true,
         background: options.background || false,
         ...(previousResponseId && { previous_response_id: previousResponseId }),
-        max_completion_tokens: 4000
+        max_output_tokens: 4000
       }),
     });
 
@@ -399,7 +399,7 @@ async function handleBackgroundTask(input: string, taskType: string, patientCont
       ],
       store: true,
       background: true,
-      max_completion_tokens: 8000
+      max_output_tokens: 8000
     }),
   });
 
