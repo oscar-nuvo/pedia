@@ -78,21 +78,43 @@ serve(async (req) => {
       .order('created_at', { ascending: true })
       .limit(20);
 
-    // Build context for prompt library
-    const buildPromptContext = (recentMessages: any[], message: string, patientContext: any, fileIds: string[]) => {
-      const context: any = {
-        conversation_history: recentMessages?.map(msg => ({
+    // Build input messages for prompt library
+    const buildConversationInput = (recentMessages: any[], message: string, patientContext: any, fileIds: string[]) => {
+      const messages: any[] = [];
+      
+      // Add patient context as system message if provided
+      if (patientContext) {
+        messages.push({
+          role: "system",
+          content: `Patient Context: ${JSON.stringify(patientContext)}`
+        });
+      }
+      
+      // Add conversation history
+      if (recentMessages?.length > 0) {
+        messages.push(...recentMessages.map(msg => ({
           role: msg.role,
-          content: msg.content,
-          timestamp: msg.created_at
-        })) || [],
-        current_message: message
-      };
+          content: msg.content
+        })));
+      }
       
-      if (patientContext) context.patient_context = patientContext;
-      if (fileIds.length > 0) context.file_ids = fileIds;
+      // Add current message if not already in recent messages
+      if (!recentMessages?.some(msg => msg.content === message)) {
+        messages.push({
+          role: "user",
+          content: message
+        });
+      }
       
-      return context;
+      // Add file context if provided
+      if (fileIds.length > 0) {
+        messages.push({
+          role: "system",
+          content: `File IDs referenced: ${fileIds.join(', ')}`
+        });
+      }
+      
+      return messages;
     };
 
     // Enhanced tools
@@ -157,7 +179,7 @@ serve(async (req) => {
         prompt: {
           id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f"
         },
-        context: buildPromptContext(recentMessages || [], message, patientContext, fileIds),
+        input: buildConversationInput(recentMessages || [], message, patientContext, fileIds),
         tools,
         tool_choice: 'auto',
         stream: true,
@@ -336,12 +358,16 @@ async function handleBackgroundTask(input: string, taskType: string, patientCont
       prompt: {
         id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f"
       },
-      context: {
-        task_type: taskType,
-        analysis_request: input,
-        patient_context: patientContext,
-        background_mode: true
-      },
+      input: [
+        {
+          role: "system",
+          content: `Task Type: ${taskType}. Patient Context: ${JSON.stringify(patientContext || {})}`
+        },
+        {
+          role: "user", 
+          content: input
+        }
+      ],
       store: true,
       background: true,
       reasoning_effort: 'high',
