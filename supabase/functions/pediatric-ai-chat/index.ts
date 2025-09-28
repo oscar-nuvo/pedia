@@ -55,40 +55,36 @@ serve(async (req) => {
 
     console.log('Saved user message:', userMessage.id);
 
-    // Prepare OpenAI request with specific prompt
+    // Prepare OpenAI request with specific prompt - using Responses API format
     const tools = [
       {
+        "name": "calculate_pediatric_dosage",
         "type": "function",
-        "function": {
-          "name": "calculate_pediatric_dosage",
-          "description": "Calculate medication dosage for pediatric patients based on weight, age, and medication type",
-          "parameters": {
-            "type": "object",
-            "properties": {
-              "medication": { "type": "string", "description": "Name of the medication" },
-              "weight_kg": { "type": "number", "description": "Patient weight in kilograms" },
-              "age_months": { "type": "number", "description": "Patient age in months" },
-              "indication": { "type": "string", "description": "Medical indication for the medication" }
-            },
-            "required": ["medication", "weight_kg"]
-          }
+        "description": "Calculate medication dosage for pediatric patients based on weight, age, and medication type",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "medication": { "type": "string", "description": "Name of the medication" },
+            "weight_kg": { "type": "number", "description": "Patient weight in kilograms" },
+            "age_months": { "type": "number", "description": "Patient age in months" },
+            "indication": { "type": "string", "description": "Medical indication for the medication" }
+          },
+          "required": ["medication", "weight_kg"]
         }
       },
       {
+        "name": "analyze_growth_chart",
         "type": "function", 
-        "function": {
-          "name": "analyze_growth_chart",
-          "description": "Analyze pediatric growth parameters and provide percentile information",
-          "parameters": {
-            "type": "object",
-            "properties": {
-              "height_cm": { "type": "number", "description": "Height in centimeters" },
-              "weight_kg": { "type": "number", "description": "Weight in kilograms" },
-              "age_months": { "type": "number", "description": "Age in months" },
-              "sex": { "type": "string", "enum": ["male", "female"], "description": "Patient sex" }
-            },
-            "required": ["height_cm", "weight_kg", "age_months", "sex"]
-          }
+        "description": "Analyze pediatric growth parameters and provide percentile information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "height_cm": { "type": "number", "description": "Height in centimeters" },
+            "weight_kg": { "type": "number", "description": "Weight in kilograms" },
+            "age_months": { "type": "number", "description": "Age in months" },
+            "sex": { "type": "string", "enum": ["male", "female"], "description": "Patient sex" }
+          },
+          "required": ["height_cm", "weight_kg", "age_months", "sex"]
         }
       }
     ];
