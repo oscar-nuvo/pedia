@@ -146,6 +146,50 @@ export const useAdvancedAIChat = (conversationId?: string) => {
     enabled: !!currentConversationId,
   });
 
+  // Delete conversation
+  const deleteConversationMutation = useMutation({
+    mutationFn: async (conversationId: string) => {
+      const { error } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('id', conversationId);
+      
+      if (error) throw error;
+      
+      return { id: conversationId };
+    },
+    onSuccess: (deletedConversation) => {
+      toast({
+        title: "Success",
+        description: "Conversation deleted successfully",
+      });
+      
+      // If deleting current conversation, start a new one
+      if (currentConversationId === deletedConversation.id) {
+        setCurrentConversationId(null);
+        setStreamingState({
+          isStreaming: false,
+          streamingMessage: '',
+          reasoningText: '',
+          showReasoning: true,
+          functionCalls: [],
+          images: [],
+        });
+      }
+      
+      // Invalidate queries to refresh conversation list
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+    onError: (error) => {
+      console.error('Error deleting conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Create new conversation
   const createConversationMutation = useMutation({
     mutationFn: async (title: string = 'New Conversation') => {
@@ -764,6 +808,10 @@ export const useAdvancedAIChat = (conversationId?: string) => {
     });
   }, [sendMessageMutation]);
 
+  const deleteConversation = useCallback((conversationId: string) => {
+    deleteConversationMutation.mutate(conversationId);
+  }, [deleteConversationMutation]);
+
   // Real-time subscriptions
   useEffect(() => {
     if (!currentConversationId || !user) return;
@@ -816,6 +864,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
     toggleReasoning,
     startBackgroundTask,
     uploadFiles,
+    deleteConversation,
     
     // Setters
     setPatientContext,

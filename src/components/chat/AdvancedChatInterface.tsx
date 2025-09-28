@@ -26,8 +26,10 @@ import {
   User,
   Stethoscope,
   Settings,
-  Download
+  Download,
+  Trash2
 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useAdvancedAIChat, AdvancedMessage, Citation, FunctionCall, BackgroundTask } from "@/hooks/useAdvancedAIChat";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -63,6 +65,7 @@ const AdvancedChatInterface = () => {
     startBackgroundTask,
     uploadFiles,
     setPatientContext,
+    deleteConversation,
   } = useAdvancedAIChat();
 
   const scrollToBottom = () => {
@@ -157,19 +160,50 @@ const AdvancedChatInterface = () => {
               ) : (
                 conversations.map((conversation) => (
                   <SidebarMenuItem key={conversation.id}>
-                    <SidebarMenuButton
-                      onClick={() => selectConversation(conversation.id)}
-                      isActive={currentConversationId === conversation.id}
-                      className="w-full justify-start text-left"
-                    >
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{conversation.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {format(new Date(conversation.updated_at), 'MMM d, HH:mm')}
-                        </p>
-                      </div>
-                    </SidebarMenuButton>
+                    <div className="flex items-center group w-full">
+                      <SidebarMenuButton
+                        onClick={() => selectConversation(conversation.id)}
+                        isActive={currentConversationId === conversation.id}
+                        className="flex-1 mr-2"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{conversation.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {format(new Date(conversation.updated_at), 'MMM d, HH:mm')}
+                          </p>
+                        </div>
+                      </SidebarMenuButton>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 flex-shrink-0"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{conversation.title}"? 
+                              This action cannot be undone and will permanently delete all messages in this conversation.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteConversation(conversation.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </SidebarMenuItem>
                 ))
               )}
