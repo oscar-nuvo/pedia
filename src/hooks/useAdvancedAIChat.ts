@@ -192,14 +192,14 @@ export const useAdvancedAIChat = (conversationId?: string) => {
 
   // Create new conversation
   const createConversationMutation = useMutation({
-    mutationFn: async (title: string = 'New Conversation') => {
+    mutationFn: async (title?: string) => {
       if (!user) throw new Error('User not authenticated');
       
       const { data, error } = await supabase
         .from('conversations')
         .insert({
           user_id: user.id,
-          title,
+          title: title || null, // Let Edge Function generate title
           metadata: {
             prompt_id: 'pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f',
             messageCount: 0,
@@ -250,7 +250,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
       
       // Create conversation if none exists
       if (!conversationIdToUse) {
-        const conversation = await createConversationMutation.mutateAsync('New Conversation');
+        const conversation = await createConversationMutation.mutateAsync(undefined);
         conversationIdToUse = conversation.id;
       }
 
@@ -441,7 +441,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
       }
 
     } finally {
-      // Invalidate queries to refresh messages
+      // Invalidate queries to refresh messages and conversations (for title updates)
       queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     }

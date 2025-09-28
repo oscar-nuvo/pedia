@@ -70,6 +70,49 @@ serve(async (req) => {
 
     console.log(`Saved user message: ${userMessage.id}`);
 
+    // Check if this is the first user message and generate title
+    const { count } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('conversation_id', conversationId);
+
+    if (count === 1) {
+      try {
+        console.log('Generating conversation title...');
+        const titleResponse = await fetch('https://api.openai.com/v1/responses', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openaiApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-5-nano-2025-08-07',
+            input: `Write a 4 word summary of the following text: ${message}`
+          }),
+        });
+
+        if (titleResponse.ok) {
+          const titleResult = await titleResponse.json();
+          const generatedTitle = titleResult.response?.output_text || 'New Conversation';
+          
+          // Update conversation title
+          const { error: titleError } = await supabase
+            .from('conversations')
+            .update({ title: generatedTitle.trim() })
+            .eq('id', conversationId);
+
+          if (titleError) {
+            console.error('Error updating conversation title:', titleError);
+          } else {
+            console.log('Conversation title updated:', generatedTitle);
+          }
+        }
+      } catch (titleError) {
+        console.error('Error generating title:', titleError);
+        // Continue with conversation even if title generation fails
+      }
+    }
+
     // Build conversation context
     const { data: recentMessages } = await supabase
       .from('messages')
