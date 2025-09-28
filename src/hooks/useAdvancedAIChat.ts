@@ -330,6 +330,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
                 accumulatedContent,
                 accumulatedReasoning,
                 functionCallsBuffer,
+                conversationId,
                 setAccumulatedContent: (content: string) => { accumulatedContent = content; },
                 setAccumulatedReasoning: (reasoning: string) => { accumulatedReasoning = reasoning; }
               });
@@ -435,6 +436,33 @@ export const useAdvancedAIChat = (conversationId?: string) => {
           progress: { type: 'text', status: 'Saving message...' }
         }));
         
+        // Optimistically append the assistant message so it persists immediately
+        try {
+          const optimisticContent = event.content || context.accumulatedContent || '';
+          if (optimisticContent.trim() && context.conversationId) {
+            queryClient.setQueryData<AdvancedMessage[] | undefined>(['messages', context.conversationId], (old) => {
+              const existing = old || [];
+              const tempId = `temp-${event.responseId || crypto.randomUUID()}`;
+              // Avoid duplicating if already present
+              if (existing.some(m => m.id === tempId)) return existing;
+              return [
+                ...existing,
+                {
+                  id: tempId,
+                  role: 'assistant',
+                  content: optimisticContent.trim(),
+                  created_at: new Date().toISOString(),
+                  metadata: {
+                    tokens: event.usage,
+                  }
+                } as AdvancedMessage
+              ];
+            });
+          }
+        } catch (e) {
+          console.warn('Optimistic update failed:', e);
+        }
+        
         // Enhanced token usage logging for Responses API
         if (event.usage) {
           console.log('Token usage:', event.usage);
@@ -457,7 +485,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
           console.log('Response ID for conversation continuity:', event.responseId);
         }
 
-        // Small delay to ensure message is visible before clearing
+        // Small delay to ensure optimistic message is visible before clearing typing state
         setTimeout(() => {
           setStreamingState(prev => ({
             ...prev,
@@ -465,7 +493,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
             streamingMessage: '',
             progress: { type: 'text', status: 'Complete' }
           }));
-        }, 1000);
+        }, 600);
         break;
 
       case 'stream_error':
