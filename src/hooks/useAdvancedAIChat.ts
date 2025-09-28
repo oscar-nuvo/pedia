@@ -17,6 +17,8 @@ export interface AdvancedMessage {
     tokens?: any;
     images?: string[];
     calculations?: any[];
+    responseId?: string;
+    isPersisted?: boolean;
   };
 }
 
@@ -358,6 +360,10 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         }));
         break;
 
+      case 'response_id':
+        console.log('Response ID received:', event.responseId);
+        break;
+
       case 'text_delta':
         context.setAccumulatedContent(context.accumulatedContent + event.delta);
         setStreamingState(prev => ({
@@ -436,10 +442,13 @@ export const useAdvancedAIChat = (conversationId?: string) => {
           progress: { type: 'text', status: 'Saving message...' }
         }));
         
+        // Store the response for potential fallback
+        const finalContent = event.content || context.accumulatedContent || '';
+        let fallbackTimeout: NodeJS.Timeout | null = null;
+        
         // Optimistically append the assistant message so it persists immediately
         try {
-          const optimisticContent = event.content || context.accumulatedContent || '';
-          if (optimisticContent.trim() && context.conversationId) {
+          if (finalContent.trim() && context.conversationId) {
             queryClient.setQueryData<AdvancedMessage[] | undefined>(['messages', context.conversationId], (old) => {
               const existing = old || [];
               const tempId = `temp-${event.responseId || crypto.randomUUID()}`;
@@ -450,14 +459,77 @@ export const useAdvancedAIChat = (conversationId?: string) => {
                 {
                   id: tempId,
                   role: 'assistant',
-                  content: optimisticContent.trim(),
+                  content: finalContent.trim(),
                   created_at: new Date().toISOString(),
                   metadata: {
                     tokens: event.usage,
+                    responseId: event.responseId,
+                    isPersisted: false // Mark as not yet persisted
                   }
                 } as AdvancedMessage
               ];
             });
+
+            // Set up fallback timeout for client-side persistence
+            fallbackTimeout = setTimeout(async () => {
+              console.log('Fallback: Edge function did not confirm save, persisting from client...');
+              try {
+                // Check if already saved by looking for response_id in DB
+                const { data: existingMessage } = await supabase
+                  .from('messages')
+                  .select('id')
+                  .eq('response_id', event.responseId)
+                  .eq('conversation_id', context.conversationId)
+                  .single();
+
+                if (!existingMessage && finalContent.trim()) {
+                  // Save from client as fallback
+                  const { data: fallbackMessage, error: fallbackError } = await supabase
+                    .from('messages')
+                    .insert({
+                      conversation_id: context.conversationId,
+                      role: 'assistant',
+                      content: finalContent.trim(),
+                      response_id: event.responseId,
+                      metadata: {
+                        tokens: event.usage,
+                        reasoningSummary: context.accumulatedReasoning || undefined,
+                        fallbackSave: true
+                      }
+                    })
+                    .select()
+                    .single();
+
+                  if (fallbackError) {
+                    console.error('Fallback save failed:', fallbackError);
+                  } else {
+                    console.log('Fallback save successful:', fallbackMessage.id);
+                    
+                    // Update conversation metadata
+                    await supabase
+                      .from('conversations')
+                      .update({
+                        metadata: {
+                          responseId: event.responseId,
+                          lastResponseAt: new Date().toISOString()
+                        }
+                      })
+                      .eq('id', context.conversationId);
+
+                    // Update the optimistic message to mark as persisted
+                    queryClient.setQueryData<AdvancedMessage[] | undefined>(['messages', context.conversationId], (old) => {
+                      return (old || []).map(msg => 
+                        msg.metadata?.responseId === event.responseId
+                          ? { ...msg, id: fallbackMessage.id, metadata: { ...msg.metadata, isPersisted: true } }
+                          : msg
+                      );
+                    });
+                  }
+                }
+              } catch (fallbackErr) {
+                console.error('Fallback persistence error:', fallbackErr);
+              }
+            }, 2000); // 2 second timeout for fallback
           }
         } catch (e) {
           console.warn('Optimistic update failed:', e);
@@ -485,7 +557,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
           console.log('Response ID for conversation continuity:', event.responseId);
         }
 
-        // Small delay to ensure optimistic message is visible before clearing typing state
+        // Clear streaming state after a short delay
         setTimeout(() => {
           setStreamingState(prev => ({
             ...prev,
@@ -494,6 +566,24 @@ export const useAdvancedAIChat = (conversationId?: string) => {
             progress: { type: 'text', status: 'Complete' }
           }));
         }, 600);
+        break;
+
+      case 'response_saved':
+        console.log('Edge function confirmed message saved:', event.messageId);
+        // Clear any pending fallback timeout since save was confirmed
+        // Update optimistic message to mark as persisted and use real ID
+        queryClient.setQueryData<AdvancedMessage[] | undefined>(['messages', context.conversationId], (old) => {
+          return (old || []).map(msg => 
+            msg.metadata?.responseId === event.responseId
+              ? { ...msg, id: event.messageId, metadata: { ...msg.metadata, isPersisted: true } }
+              : msg
+          );
+        });
+        break;
+
+      case 'db_error':
+        console.error('Database error from edge function:', event.details);
+        // The fallback will kick in after timeout, no need to do anything special here
         break;
 
       case 'stream_error':

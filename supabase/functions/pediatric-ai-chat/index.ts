@@ -243,6 +243,18 @@ serve(async (req) => {
                   const parsed = JSON.parse(data);
                   console.log('Responses API event:', parsed.type);
                   
+                  // Capture response ID early for debugging
+                  if (parsed.type === 'response.created' || (parsed.response?.id && !currentResponseId)) {
+                    currentResponseId = parsed.response?.id || '';
+                    if (currentResponseId) {
+                      console.log('Response ID captured early:', currentResponseId);
+                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                        type: 'response_id',
+                        responseId: currentResponseId
+                      })}\n\n`));
+                    }
+                  }
+                  
                   // Handle Responses API events
                   if (parsed.type === 'response.output_text.delta') {
                     assistantContent += parsed.delta;
@@ -290,42 +302,80 @@ serve(async (req) => {
                         result: { error: fnError instanceof Error ? fnError.message : 'Function execution failed' }
                       })}\n\n`));
                     }
-                  } else if (parsed.type === 'response.done') {
-                    currentResponseId = parsed.response?.id || '';
+                  } else if (parsed.type === 'response.done' || parsed.type === 'response.completed') {
+                    // Handle both possible final event types
+                    console.log('Final event received:', parsed.type);
+                    
+                    if (!currentResponseId && parsed.response?.id) {
+                      currentResponseId = parsed.response.id;
+                    }
                     
                     // Save assistant message with response ID
                     if (assistantContent.trim()) {
-                      const { error: assistantMsgError } = await supabase
-                        .from('messages')
-                        .insert({
-                          conversation_id: conversationId,
-                          role: 'assistant',
-                          content: assistantContent.trim(),
-                          response_id: currentResponseId,
-                          metadata: { 
-                            prompt_id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f", 
-                            responseId: currentResponseId,
-                            reasoningSummary: reasoningSummary || undefined,
-                            usage: parsed.response?.usage
-                          }
-                        });
+                      console.log('Attempting to save assistant message...', {
+                        conversationId,
+                        responseId: currentResponseId,
+                        contentLength: assistantContent.trim().length
+                      });
 
-                      if (assistantMsgError) {
-                        console.error('Error saving assistant message:', assistantMsgError);
-                      } else {
-                        console.log('Saved assistant message with response ID:', currentResponseId);
-                        
-                        // Update conversation metadata with latest response ID
-                        await supabase
-                          .from('conversations')
-                          .update({
-                            metadata: {
-                              ...conversation?.metadata,
+                      try {
+                        const { data: savedMessage, error: assistantMsgError } = await supabase
+                          .from('messages')
+                          .insert({
+                            conversation_id: conversationId,
+                            role: 'assistant',
+                            content: assistantContent.trim(),
+                            response_id: currentResponseId,
+                            metadata: { 
+                              prompt_id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f", 
                               responseId: currentResponseId,
-                              lastResponseAt: new Date().toISOString()
+                              reasoningSummary: reasoningSummary || undefined,
+                              usage: parsed.response?.usage
                             }
                           })
-                          .eq('id', conversationId);
+                          .select()
+                          .single();
+
+                        if (assistantMsgError) {
+                          console.error('Error saving assistant message:', JSON.stringify(assistantMsgError));
+                          
+                          // Emit error event for client-side fallback
+                          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                            type: 'db_error',
+                            details: assistantMsgError.message
+                          })}\n\n`));
+                        } else {
+                          console.log('Successfully saved assistant message:', savedMessage.id);
+                          
+                          // Update conversation metadata with latest response ID
+                          const { error: updateError } = await supabase
+                            .from('conversations')
+                            .update({
+                              metadata: {
+                                ...conversation?.metadata,
+                                responseId: currentResponseId,
+                                lastResponseAt: new Date().toISOString()
+                              }
+                            })
+                            .eq('id', conversationId);
+
+                          if (updateError) {
+                            console.error('Error updating conversation metadata:', updateError);
+                          }
+
+                          // Emit success event
+                          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                            type: 'response_saved',
+                            messageId: savedMessage.id,
+                            responseId: currentResponseId
+                          })}\n\n`));
+                        }
+                      } catch (dbError) {
+                        console.error('Database operation failed:', JSON.stringify(dbError));
+                        controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                          type: 'db_error',
+                          details: dbError instanceof Error ? dbError.message : 'Database error'
+                        })}\n\n`));
                       }
                     }
 
