@@ -73,28 +73,27 @@ serve(async (req) => {
     // Build conversation context
     const { data: recentMessages } = await supabase
       .from('messages')
-      .select('role, content')
+      .select('role, content, created_at')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
       .limit(20);
 
-    const systemPrompt = `You are a specialized pediatric AI assistant with expertise in:
-- Medication dosing and safety for children and adolescents
-- Growth and development assessment  
-- Clinical guidelines from AAP, CDC, WHO, and other organizations
-- Differential diagnosis and clinical decision support
-- Evidence-based pediatric care
-
-${patientContext ? `Current patient: ${JSON.stringify(patientContext)}` : ''}
-
-Always provide evidence-based recommendations with safety warnings for medications and procedures.
-Show calculations step-by-step for dosing and include confidence levels.`;
-
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...(recentMessages || []),
-      { role: 'user', content: message }
-    ];
+    // Build context for prompt library
+    const buildPromptContext = (recentMessages: any[], message: string, patientContext: any, fileIds: string[]) => {
+      const context: any = {
+        conversation_history: recentMessages?.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.created_at
+        })) || [],
+        current_message: message
+      };
+      
+      if (patientContext) context.patient_context = patientContext;
+      if (fileIds.length > 0) context.file_ids = fileIds;
+      
+      return context;
+    };
 
     // Enhanced tools
     const tools = [
@@ -147,7 +146,7 @@ Show calculations step-by-step for dosing and include confidence levels.`;
 
     const previousResponseId = lastMessage?.metadata?.responseId;
 
-    // Create OpenAI Responses API request
+    // Create OpenAI Responses API request with prompt library
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
@@ -155,8 +154,10 @@ Show calculations step-by-step for dosing and include confidence levels.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
-        input: messages,
+        prompt: {
+          id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f"
+        },
+        context: buildPromptContext(recentMessages || [], message, patientContext, fileIds),
         tools,
         tool_choice: 'auto',
         stream: true,
@@ -267,7 +268,7 @@ Show calculations step-by-step for dosing and include confidence levels.`;
                           role: 'assistant',
                           content: assistantContent.trim(),
                           metadata: { 
-                            model: 'gpt-4o', 
+                            prompt_id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f", 
                             responseId: currentResponseId,
                             reasoningSummary: reasoningSummary || undefined,
                             usage: parsed.response?.usage
@@ -325,12 +326,6 @@ Show calculations step-by-step for dosing and include confidence levels.`;
 });
 
 async function handleBackgroundTask(input: string, taskType: string, patientContext: any, openaiApiKey: string) {
-  const prompts = {
-    medical_research: `Conduct comprehensive medical research on: ${input}. Include latest clinical studies, guidelines from AAP/CDC/WHO, evidence quality assessment, and practical recommendations. Patient context: ${JSON.stringify(patientContext)}`,
-    drug_interaction: `Analyze drug interactions for: ${input}. Check against patient medications, include severity ratings and clinical recommendations. Patient: ${JSON.stringify(patientContext)}`,
-    diagnosis_analysis: `Perform differential diagnosis analysis for: ${input}. Consider patient history, rank by probability with supporting evidence. Patient: ${JSON.stringify(patientContext)}`
-  };
-
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
@@ -338,11 +333,15 @@ async function handleBackgroundTask(input: string, taskType: string, patientCont
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
-      input: [
-        { role: 'system', content: 'You are a pediatric medical expert providing comprehensive analysis.' },
-        { role: 'user', content: prompts[taskType as keyof typeof prompts] || input }
-      ],
+      prompt: {
+        id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f"
+      },
+      context: {
+        task_type: taskType,
+        analysis_request: input,
+        patient_context: patientContext,
+        background_mode: true
+      },
       store: true,
       background: true,
       reasoning_effort: 'high',
