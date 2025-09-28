@@ -78,7 +78,7 @@ serve(async (req) => {
       .order('created_at', { ascending: true })
       .limit(20);
 
-    // Build input messages for prompt library
+    // Build input messages for prompt library with content parts format
     const buildConversationInput = (recentMessages: any[], message: string, patientContext: any, fileIds: string[]) => {
       const messages: any[] = [];
       
@@ -86,7 +86,12 @@ serve(async (req) => {
       if (patientContext) {
         messages.push({
           role: "system",
-          content: `Patient Context: ${JSON.stringify(patientContext)}`
+          content: [
+            {
+              type: "input_text",
+              text: `Patient Context: ${JSON.stringify(patientContext)}`
+            }
+          ]
         });
       }
       
@@ -94,7 +99,12 @@ serve(async (req) => {
       if (recentMessages?.length > 0) {
         messages.push(...recentMessages.map(msg => ({
           role: msg.role,
-          content: msg.content
+          content: [
+            {
+              type: "input_text", 
+              text: msg.content
+            }
+          ]
         })));
       }
       
@@ -102,7 +112,12 @@ serve(async (req) => {
       if (!recentMessages?.some(msg => msg.content === message)) {
         messages.push({
           role: "user",
-          content: message
+          content: [
+            {
+              type: "input_text",
+              text: message
+            }
+          ]
         });
       }
       
@@ -110,7 +125,12 @@ serve(async (req) => {
       if (fileIds.length > 0) {
         messages.push({
           role: "system",
-          content: `File IDs referenced: ${fileIds.join(', ')}`
+          content: [
+            {
+              type: "input_text",
+              text: `File IDs referenced: ${fileIds.join(', ')}`
+            }
+          ]
         });
       }
       
@@ -181,11 +201,8 @@ serve(async (req) => {
         },
         input: buildConversationInput(recentMessages || [], message, patientContext, fileIds),
         tools,
-        tool_choice: 'auto',
         stream: true,
         store: true,
-        reasoning_effort: 'high',
-        include: ['reasoning.summary'],
         background: options.background || false,
         ...(previousResponseId && { previous_response_id: previousResponseId }),
         max_completion_tokens: 4000
@@ -193,7 +210,9 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     console.log(`Making OpenAI Responses API request for conversation: ${conversationId}`);
@@ -361,17 +380,25 @@ async function handleBackgroundTask(input: string, taskType: string, patientCont
       input: [
         {
           role: "system",
-          content: `Task Type: ${taskType}. Patient Context: ${JSON.stringify(patientContext || {})}`
+          content: [
+            {
+              type: "input_text",
+              text: `Task Type: ${taskType}. Patient Context: ${JSON.stringify(patientContext || {})}`
+            }
+          ]
         },
         {
           role: "user", 
-          content: input
+          content: [
+            {
+              type: "input_text",
+              text: input
+            }
+          ]
         }
       ],
       store: true,
       background: true,
-      reasoning_effort: 'high',
-      include: ['reasoning.summary'],
       max_completion_tokens: 8000
     }),
   });
