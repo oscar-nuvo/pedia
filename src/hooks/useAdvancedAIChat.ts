@@ -311,6 +311,8 @@ export const useAdvancedAIChat = (conversationId?: string) => {
 
     let accumulatedContent = '';
     let accumulatedReasoning = '';
+    let currentResponseId = '';
+    let receivedResponseComplete = false;
     const functionCallsBuffer: Map<string, any> = new Map();
 
     try {
@@ -333,8 +335,11 @@ export const useAdvancedAIChat = (conversationId?: string) => {
                 accumulatedReasoning,
                 functionCallsBuffer,
                 conversationId,
+                currentResponseId,
                 setAccumulatedContent: (content: string) => { accumulatedContent = content; },
-                setAccumulatedReasoning: (reasoning: string) => { accumulatedReasoning = reasoning; }
+                setAccumulatedReasoning: (reasoning: string) => { accumulatedReasoning = reasoning; },
+                setCurrentResponseId: (id: string) => { currentResponseId = id; },
+                setReceivedResponseComplete: (received: boolean) => { receivedResponseComplete = received; }
               });
             } catch (parseError) {
               console.error('Error parsing streaming data:', parseError);
@@ -342,9 +347,56 @@ export const useAdvancedAIChat = (conversationId?: string) => {
           }
         }
       }
+
+      // Secondary fallback: if stream ended without response_complete but we have content
+      if (!receivedResponseComplete && accumulatedContent.trim()) {
+        console.log('Secondary fallback: stream ended without response_complete, triggering fallback save');
+        
+        setTimeout(async () => {
+          try {
+            // Check if message was already persisted
+            if (currentResponseId) {
+              const { data: existing } = await supabase
+                .from('messages')
+                .select('id')
+                .eq('response_id', currentResponseId)
+                .eq('conversation_id', conversationId)
+                .single();
+              
+              if (existing) {
+                console.log('Message already persisted via response_id:', currentResponseId);
+                return;
+              }
+            }
+
+            // Save as fallback
+            const { data: fallbackMessage } = await supabase
+              .from('messages')
+              .insert({
+                conversation_id: conversationId,
+                role: 'assistant',
+                content: accumulatedContent.trim(),
+                response_id: currentResponseId || null,
+                metadata: {
+                  reasoningSummary: accumulatedReasoning || undefined,
+                  fallbackSave: true,
+                  secondaryFallback: true
+                }
+              })
+              .select()
+              .single();
+
+            if (fallbackMessage) {
+              console.log('Secondary fallback save successful:', fallbackMessage.id);
+              queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+            }
+          } catch (error) {
+            console.error('Secondary fallback save failed:', error);
+          }
+        }, 2000);
+      }
+
     } finally {
-      // Don't clear streaming message here - let response_complete handle it
-      
       // Invalidate queries to refresh messages
       queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
@@ -362,6 +414,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
 
       case 'response_id':
         console.log('Response ID received:', event.responseId);
+        context.setCurrentResponseId(event.responseId);
         break;
 
       case 'text_delta':
@@ -435,16 +488,30 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         context.functionCallsBuffer.delete(event.callId);
         break;
 
+      case 'response_saved':
+        console.log('Response saved successfully by Edge Function:', event.messageId);
+        // Clear any pending fallback since Edge Function succeeded
+        setStreamingState(prev => ({
+          ...prev,
+          progress: { type: 'text', status: 'Response saved successfully' }
+        }));
+        break;
+
+      case 'db_error':
+        console.log('Edge Function DB error, client fallback will handle:', event.details);
+        break;
+
       case 'response_complete':
+        context.setReceivedResponseComplete(true);
+        
         // Keep message visible during database save
         setStreamingState(prev => ({
           ...prev,
-          progress: { type: 'text', status: 'Saving message...' }
+          progress: { type: 'text', status: 'Finalizing response...' }
         }));
         
         // Store the response for potential fallback
         const finalContent = event.content || context.accumulatedContent || '';
-        let fallbackTimeout: NodeJS.Timeout | null = null;
         
         // Optimistically append the assistant message so it persists immediately
         try {
@@ -464,23 +531,28 @@ export const useAdvancedAIChat = (conversationId?: string) => {
                   metadata: {
                     tokens: event.usage,
                     responseId: event.responseId,
-                    isPersisted: false // Mark as not yet persisted
+                    isPersisted: false, // Will be updated when response_saved is received
+                    safetyFinalization: event.safetyFinalization
                   }
                 } as AdvancedMessage
               ];
             });
 
-            // Set up fallback timeout for client-side persistence
-            fallbackTimeout = setTimeout(async () => {
-              console.log('Fallback: Edge function did not confirm save, persisting from client...');
+            // Set up fallback timeout for client-side persistence (only if no response_saved yet)
+            setTimeout(async () => {
+              console.log('Primary fallback: checking if Edge Function saved the message...');
               try {
                 // Check if already saved by looking for response_id in DB
-                const { data: existingMessage } = await supabase
-                  .from('messages')
-                  .select('id')
-                  .eq('response_id', event.responseId)
-                  .eq('conversation_id', context.conversationId)
-                  .single();
+                let existingMessage = null;
+                if (event.responseId) {
+                  const { data } = await supabase
+                    .from('messages')
+                    .select('id')
+                    .eq('response_id', event.responseId)
+                    .eq('conversation_id', context.conversationId)
+                    .single();
+                  existingMessage = data;
+                }
 
                 if (!existingMessage && finalContent.trim()) {
                   // Save from client as fallback
@@ -490,7 +562,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
                       conversation_id: context.conversationId,
                       role: 'assistant',
                       content: finalContent.trim(),
-                      response_id: event.responseId,
+                      response_id: event.responseId || null,
                       metadata: {
                         tokens: event.usage,
                         reasoningSummary: context.accumulatedReasoning || undefined,
@@ -500,85 +572,55 @@ export const useAdvancedAIChat = (conversationId?: string) => {
                     .select()
                     .single();
 
-                  if (fallbackError) {
-                    console.error('Fallback save failed:', fallbackError);
-                  } else {
-                    console.log('Fallback save successful:', fallbackMessage.id);
+                  if (!fallbackError && fallbackMessage) {
+                    console.log('Primary fallback save successful:', fallbackMessage.id);
                     
                     // Update conversation metadata
+                    const { data: currentConversation } = await supabase
+                      .from('conversations')
+                      .select('metadata')
+                      .eq('id', context.conversationId)
+                      .single();
+
+                    const existingMetadata = (currentConversation?.metadata as any) || {};
                     await supabase
                       .from('conversations')
                       .update({
                         metadata: {
+                          ...existingMetadata,
                           responseId: event.responseId,
                           lastResponseAt: new Date().toISOString()
                         }
                       })
                       .eq('id', context.conversationId);
 
-                    // Update the optimistic message to mark as persisted
-                    queryClient.setQueryData<AdvancedMessage[] | undefined>(['messages', context.conversationId], (old) => {
-                      return (old || []).map(msg => 
-                        msg.metadata?.responseId === event.responseId
-                          ? { ...msg, id: fallbackMessage.id, metadata: { ...msg.metadata, isPersisted: true } }
-                          : msg
-                      );
-                    });
+                    queryClient.invalidateQueries({ queryKey: ['messages', context.conversationId] });
+                  } else {
+                    console.error('Primary fallback save failed:', fallbackError);
                   }
+                } else if (existingMessage) {
+                  console.log('Message already persisted by Edge Function:', existingMessage.id);
                 }
-              } catch (fallbackErr) {
-                console.error('Fallback persistence error:', fallbackErr);
+              } catch (error) {
+                console.error('Primary fallback error:', error);
               }
-            }, 2000); // 2 second timeout for fallback
+            }, 3000); // Wait 3 seconds for response_saved
           }
-        } catch (e) {
-          console.warn('Optimistic update failed:', e);
-        }
-        
-        // Enhanced token usage logging for Responses API
-        if (event.usage) {
-          console.log('Token usage:', event.usage);
-          if (event.reasoningTokens) {
-            console.log('Reasoning tokens:', event.reasoningTokens);
-          }
-          
-          // Show reasoning token usage to user if significant
-          if (event.reasoningTokens && event.reasoningTokens > 1000) {
-            toast({
-              title: "Complex Analysis Completed",
-              description: `Used ${event.reasoningTokens} reasoning tokens for thorough analysis`,
-              variant: "default",
-            });
-          }
+        } catch (error) {
+          console.error('Error setting optimistic message:', error);
         }
 
-        // Display response ID for debugging
-        if (event.responseId) {
-          console.log('Response ID for conversation continuity:', event.responseId);
-        }
-
-        // Clear streaming state after a short delay
+        // Final cleanup
         setTimeout(() => {
           setStreamingState(prev => ({
             ...prev,
             isStreaming: false,
             streamingMessage: '',
-            progress: { type: 'text', status: 'Complete' }
+            reasoningText: '',
+            functionCalls: [],
+            progress: undefined
           }));
-        }, 600);
-        break;
-
-      case 'response_saved':
-        console.log('Edge function confirmed message saved:', event.messageId);
-        // Clear any pending fallback timeout since save was confirmed
-        // Update optimistic message to mark as persisted and use real ID
-        queryClient.setQueryData<AdvancedMessage[] | undefined>(['messages', context.conversationId], (old) => {
-          return (old || []).map(msg => 
-            msg.metadata?.responseId === event.responseId
-              ? { ...msg, id: event.messageId, metadata: { ...msg.metadata, isPersisted: true } }
-              : msg
-          );
-        });
+        }, 1000);
         break;
 
       case 'db_error':

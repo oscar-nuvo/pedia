@@ -213,6 +213,7 @@ serve(async (req) => {
     let assistantContent = '';
     let currentResponseId = '';
     let reasoningSummary = '';
+    let sawFinalEvent = false;
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -221,6 +222,74 @@ serve(async (req) => {
           controller.close();
           return;
         }
+
+        let lineBuffer = '';
+
+        const persistAssistantMessage = async () => {
+          if (!assistantContent.trim()) return;
+
+          console.log('Persisting assistant message...', {
+            conversationId,
+            responseId: currentResponseId,
+            contentLength: assistantContent.trim().length
+          });
+
+          try {
+            const { data: savedMessage, error: assistantMsgError } = await supabase
+              .from('messages')
+              .insert({
+                conversation_id: conversationId,
+                role: 'assistant',
+                content: assistantContent.trim(),
+                response_id: currentResponseId,
+                metadata: { 
+                  prompt_id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f", 
+                  responseId: currentResponseId,
+                  reasoningSummary: reasoningSummary || undefined
+                }
+              })
+              .select()
+              .single();
+
+            if (assistantMsgError) {
+              console.error('Error saving assistant message:', JSON.stringify(assistantMsgError));
+              controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                type: 'db_error',
+                details: assistantMsgError.message
+              })}\n\n`));
+            } else {
+              console.log('Successfully saved assistant message:', savedMessage.id);
+              
+              // Update conversation metadata
+              const { error: updateError } = await supabase
+                .from('conversations')
+                .update({
+                  metadata: {
+                    ...conversation?.metadata,
+                    responseId: currentResponseId,
+                    lastResponseAt: new Date().toISOString()
+                  }
+                })
+                .eq('id', conversationId);
+
+              if (updateError) {
+                console.error('Error updating conversation metadata:', updateError);
+              }
+
+              controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                type: 'response_saved',
+                messageId: savedMessage.id,
+                responseId: currentResponseId
+              })}\n\n`));
+            }
+          } catch (dbError) {
+            console.error('Database operation failed:', JSON.stringify(dbError));
+            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+              type: 'db_error',
+              details: dbError instanceof Error ? dbError.message : 'Database error'
+            })}\n\n`));
+          }
+        };
 
         try {
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
@@ -231,10 +300,12 @@ serve(async (req) => {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = new TextDecoder().decode(value);
-            const lines = chunk.split('\n');
+            // Append to line buffer and process complete lines
+            lineBuffer += new TextDecoder().decode(value);
+            const parts = lineBuffer.split('\n');
+            lineBuffer = parts.pop() || ''; // Keep last partial line for next chunk
 
-            for (const line of lines) {
+            for (const line of parts) {
               if (line.startsWith('data: ')) {
                 const data = line.slice(6);
                 if (data === '[DONE]') continue;
@@ -243,19 +314,17 @@ serve(async (req) => {
                   const parsed = JSON.parse(data);
                   console.log('Responses API event:', parsed.type);
                   
-                  // Capture response ID early for debugging
-                  if (parsed.type === 'response.created' || (parsed.response?.id && !currentResponseId)) {
-                    currentResponseId = parsed.response?.id || '';
-                    if (currentResponseId) {
-                      console.log('Response ID captured early:', currentResponseId);
-                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
-                        type: 'response_id',
-                        responseId: currentResponseId
-                      })}\n\n`));
-                    }
+                  // Capture response ID early
+                  if (parsed.response?.id && !currentResponseId) {
+                    currentResponseId = parsed.response.id;
+                    console.log('Response ID captured:', currentResponseId);
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                      type: 'response_id',
+                      responseId: currentResponseId
+                    })}\n\n`));
                   }
                   
-                  // Handle Responses API events
+                  // Handle streaming events
                   if (parsed.type === 'response.output_text.delta') {
                     assistantContent += parsed.delta;
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
@@ -280,7 +349,6 @@ serve(async (req) => {
                       delta: parsed.delta
                     })}\n\n`));
                   } else if (parsed.type === 'response.function_call.arguments.done') {
-                    // Execute the function call
                     try {
                       const result = await handleFunctionCall({
                         name: parsed.name,
@@ -302,82 +370,15 @@ serve(async (req) => {
                         result: { error: fnError instanceof Error ? fnError.message : 'Function execution failed' }
                       })}\n\n`));
                     }
-                  } else if (parsed.type === 'response.done' || parsed.type === 'response.completed') {
-                    // Handle both possible final event types
+                  } else if (parsed.type === 'response.completed' || parsed.type === 'response.done' || parsed.type === 'response.output_text.done') {
                     console.log('Final event received:', parsed.type);
+                    sawFinalEvent = true;
                     
                     if (!currentResponseId && parsed.response?.id) {
                       currentResponseId = parsed.response.id;
                     }
                     
-                    // Save assistant message with response ID
-                    if (assistantContent.trim()) {
-                      console.log('Attempting to save assistant message...', {
-                        conversationId,
-                        responseId: currentResponseId,
-                        contentLength: assistantContent.trim().length
-                      });
-
-                      try {
-                        const { data: savedMessage, error: assistantMsgError } = await supabase
-                          .from('messages')
-                          .insert({
-                            conversation_id: conversationId,
-                            role: 'assistant',
-                            content: assistantContent.trim(),
-                            response_id: currentResponseId,
-                            metadata: { 
-                              prompt_id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f", 
-                              responseId: currentResponseId,
-                              reasoningSummary: reasoningSummary || undefined,
-                              usage: parsed.response?.usage
-                            }
-                          })
-                          .select()
-                          .single();
-
-                        if (assistantMsgError) {
-                          console.error('Error saving assistant message:', JSON.stringify(assistantMsgError));
-                          
-                          // Emit error event for client-side fallback
-                          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
-                            type: 'db_error',
-                            details: assistantMsgError.message
-                          })}\n\n`));
-                        } else {
-                          console.log('Successfully saved assistant message:', savedMessage.id);
-                          
-                          // Update conversation metadata with latest response ID
-                          const { error: updateError } = await supabase
-                            .from('conversations')
-                            .update({
-                              metadata: {
-                                ...conversation?.metadata,
-                                responseId: currentResponseId,
-                                lastResponseAt: new Date().toISOString()
-                              }
-                            })
-                            .eq('id', conversationId);
-
-                          if (updateError) {
-                            console.error('Error updating conversation metadata:', updateError);
-                          }
-
-                          // Emit success event
-                          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
-                            type: 'response_saved',
-                            messageId: savedMessage.id,
-                            responseId: currentResponseId
-                          })}\n\n`));
-                        }
-                      } catch (dbError) {
-                        console.error('Database operation failed:', JSON.stringify(dbError));
-                        controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
-                          type: 'db_error',
-                          details: dbError instanceof Error ? dbError.message : 'Database error'
-                        })}\n\n`));
-                      }
-                    }
+                    await persistAssistantMessage();
 
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
                       type: 'response_complete',
@@ -393,6 +394,20 @@ serve(async (req) => {
               }
             }
           }
+
+          // Safety finalization: persist content even if no final event was received
+          if (!sawFinalEvent && assistantContent.trim()) {
+            console.log('Safety finalization: persisting content without final event');
+            await persistAssistantMessage();
+            
+            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+              type: 'response_complete',
+              responseId: currentResponseId,
+              content: assistantContent.trim(),
+              safetyFinalization: true
+            })}\n\n`));
+          }
+
         } catch (error) {
           console.error('Streaming error:', error);
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
