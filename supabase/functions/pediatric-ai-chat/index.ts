@@ -137,41 +137,37 @@ serve(async (req) => {
       return messages;
     };
 
-    // Enhanced tools
+    // Enhanced tools for Responses API format
     const tools = [
       {
+        name: "calculate_pediatric_dosage",
         type: "function",
-        function: {
-          name: "calculate_pediatric_dosage",
-          description: "Calculate medication dosage for pediatric patients with safety checks",
-          parameters: {
-            type: "object",
-            properties: {
-              medication: { type: "string" },
-              weight_kg: { type: "number" },
-              age_years: { type: "number" },
-              indication: { type: "string" },
-              route: { type: "string", default: "oral" }
-            },
-            required: ["medication", "weight_kg", "age_years", "indication"]
-          }
+        description: "Calculate medication dosage for pediatric patients with safety checks",
+        parameters: {
+          type: "object",
+          properties: {
+            medication: { type: "string" },
+            weight_kg: { type: "number" },
+            age_years: { type: "number" },
+            indication: { type: "string" },
+            route: { type: "string", default: "oral" }
+          },
+          required: ["medication", "weight_kg", "age_years", "indication"]
         }
       },
       {
-        type: "function", 
-        function: {
-          name: "analyze_growth_chart",
-          description: "Analyze pediatric growth parameters and provide percentile estimates",
-          parameters: {
-            type: "object",
-            properties: {
-              height_cm: { type: "number" },
-              weight_kg: { type: "number" },
-              age_months: { type: "number" },
-              sex: { type: "string", enum: ["male", "female"] }
-            },
-            required: ["height_cm", "weight_kg", "age_months", "sex"]
-          }
+        name: "analyze_growth_chart",
+        type: "function",
+        description: "Analyze pediatric growth parameters and provide percentile estimates",
+        parameters: {
+          type: "object",
+          properties: {
+            height_cm: { type: "number" },
+            weight_kg: { type: "number" },
+            age_months: { type: "number" },
+            sex: { type: "string", enum: ["male", "female"] }
+          },
+          required: ["height_cm", "weight_kg", "age_months", "sex"]
         }
       }
     ];
