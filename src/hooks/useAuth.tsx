@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const signUp = async (email: string, password: string, userData: any) => {
-    const redirectUrl = `${window.location.origin}/onboarding`;
+    const redirectUrl = `${window.location.origin}/ai-copilot`;
     
     const { error } = await supabase.auth.signUp({
       email,

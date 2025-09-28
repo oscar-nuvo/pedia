@@ -28,7 +28,7 @@ export default function Auth() {
 
   // Redirect if already authenticated
   if (user) {
-    return <Navigate to="/onboarding" replace />;
+    return <Navigate to="/ai-copilot" replace />;
   }
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
