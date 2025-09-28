@@ -13,19 +13,19 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationId, fileIds = [] } = await req.json();
+    const { message, conversationId, fileIds = [], patientContext, taskType, options = {} } = await req.json();
     
     const openaiApiKey = Deno.env.get('PediaAIKey');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
     if (!openaiApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user from JWT
+    // Authenticate user
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
@@ -34,16 +34,31 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    console.log('Processing message for user:', user.id);
+    console.log(`Processing message for user: ${user.id}`);
 
-    // Save user message to database
+    // Handle background tasks
+    if (taskType && ['medical_research', 'drug_interaction', 'diagnosis_analysis'].includes(taskType)) {
+      const result = await handleBackgroundTask(message, taskType, patientContext, openaiApiKey);
+      return new Response(JSON.stringify({
+        id: crypto.randomUUID(),
+        type: taskType,
+        status: 'completed',
+        result,
+        createdAt: new Date(),
+        estimatedTime: '2-5 minutes'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Save user message
     const { data: userMessage, error: userMsgError } = await supabase
       .from('messages')
       .insert({
         conversation_id: conversationId,
         role: 'user',
         content: message,
-        metadata: { fileIds }
+        metadata: { fileIds, patientContext }
       })
       .select()
       .single();
@@ -53,80 +68,108 @@ serve(async (req) => {
       throw userMsgError;
     }
 
-    console.log('Saved user message:', userMessage.id);
+    console.log(`Saved user message: ${userMessage.id}`);
 
-    // Prepare OpenAI request with specific prompt - using Responses API format
+    // Build conversation context
+    const { data: recentMessages } = await supabase
+      .from('messages')
+      .select('role, content')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true })
+      .limit(20);
+
+    const systemPrompt = `You are a specialized pediatric AI assistant with expertise in:
+- Medication dosing and safety for children and adolescents
+- Growth and development assessment  
+- Clinical guidelines from AAP, CDC, WHO, and other organizations
+- Differential diagnosis and clinical decision support
+- Evidence-based pediatric care
+
+${patientContext ? `Current patient: ${JSON.stringify(patientContext)}` : ''}
+
+Always provide evidence-based recommendations with safety warnings for medications and procedures.
+Show calculations step-by-step for dosing and include confidence levels.`;
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...(recentMessages || []),
+      { role: 'user', content: message }
+    ];
+
+    // Enhanced tools
     const tools = [
       {
-        "name": "calculate_pediatric_dosage",
-        "type": "function",
-        "description": "Calculate medication dosage for pediatric patients based on weight, age, and medication type",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "medication": { "type": "string", "description": "Name of the medication" },
-            "weight_kg": { "type": "number", "description": "Patient weight in kilograms" },
-            "age_months": { "type": "number", "description": "Patient age in months" },
-            "indication": { "type": "string", "description": "Medical indication for the medication" }
-          },
-          "required": ["medication", "weight_kg"]
+        type: "function",
+        function: {
+          name: "calculate_pediatric_dosage",
+          description: "Calculate medication dosage for pediatric patients with safety checks",
+          parameters: {
+            type: "object",
+            properties: {
+              medication: { type: "string" },
+              weight_kg: { type: "number" },
+              age_years: { type: "number" },
+              indication: { type: "string" },
+              route: { type: "string", default: "oral" }
+            },
+            required: ["medication", "weight_kg", "age_years", "indication"]
+          }
         }
       },
       {
-        "name": "analyze_growth_chart",
-        "type": "function", 
-        "description": "Analyze pediatric growth parameters and provide percentile information",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "height_cm": { "type": "number", "description": "Height in centimeters" },
-            "weight_kg": { "type": "number", "description": "Weight in kilograms" },
-            "age_months": { "type": "number", "description": "Age in months" },
-            "sex": { "type": "string", "enum": ["male", "female"], "description": "Patient sex" }
-          },
-          "required": ["height_cm", "weight_kg", "age_months", "sex"]
+        type: "function", 
+        function: {
+          name: "analyze_growth_chart",
+          description: "Analyze pediatric growth parameters and provide percentile estimates",
+          parameters: {
+            type: "object",
+            properties: {
+              height_cm: { type: "number" },
+              weight_kg: { type: "number" },
+              age_months: { type: "number" },
+              sex: { type: "string", enum: ["male", "female"] }
+            },
+            required: ["height_cm", "weight_kg", "age_months", "sex"]
+          }
         }
       }
     ];
 
-    // Note: File search would be configured differently in production
-    // For now, we'll handle file context through regular message content
-
-    const openaiRequest = {
-      model: "gpt-5-2025-08-07",
-      prompt: {
-        id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f",
-        version: "2"
-      },
-      input: message,
-      stream: true,
-      tools: tools,
-      max_output_tokens: 1000,
-      store: true
-    };
-
-    console.log('Making OpenAI request with prompt ID pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f');
-
-    const response = await fetch('https://api.openai.com/v1/responses', {
+    // Create OpenAI request
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(openaiRequest),
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages,
+        tools,
+        tool_choice: 'auto',
+        stream: true,
+        temperature: 0.3,
+        max_tokens: 4000,
+        presence_penalty: 0.1,
+        frequency_penalty: 0.1
+      }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    // Create a readable stream for the response
+    console.log(`Making OpenAI request for conversation: ${conversationId}`);
+
+    let assistantContent = '';
+
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = response.body!.getReader();
-        let assistantContent = '';
+        const reader = response.body?.getReader();
+        if (!reader) {
+          controller.close();
+          return;
+        }
 
         try {
           while (true) {
@@ -144,63 +187,66 @@ serve(async (req) => {
                 try {
                   const parsed = JSON.parse(data);
                   
-                  // Handle different event types from Responses API
-                  if (parsed.type === 'response.created') {
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else if (parsed.type === 'response.in_progress') {
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else if (parsed.type === 'response.output_item.added') {
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else if (parsed.type === 'response.content_part.added') {
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else if (parsed.type === 'response.output_text.delta') {
-                    assistantContent += parsed.delta;
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else if (parsed.type === 'response.function_call_arguments.delta') {
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else if (parsed.type === 'response.output_item.done') {
-                    // Check if this is a function call that needs execution
-                    if (parsed.item && parsed.item.type === 'function_call') {
-                      const result = await handleFunctionCall(parsed.item);
-                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
-                        type: 'function_result',
-                        function_name: parsed.item.name,
-                        result
-                      })}\n\n`));
+                  if (parsed.choices?.[0]?.delta?.content) {
+                    assistantContent += parsed.choices[0].delta.content;
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                      type: 'text_delta',
+                      delta: parsed.choices[0].delta.content
+                    })}\n\n`));
+                  } else if (parsed.choices?.[0]?.delta?.tool_calls) {
+                    const toolCall = parsed.choices[0].delta.tool_calls[0];
+                    if (toolCall.function?.name && toolCall.function?.arguments) {
+                      try {
+                        const result = await handleFunctionCall({
+                          name: toolCall.function.name,
+                          arguments: toolCall.function.arguments
+                        });
+                        
+                        controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                          type: 'function_result',
+                          function_name: toolCall.function.name,
+                          result
+                        })}\n\n`));
+                      } catch (fnError) {
+                        console.error('Function call error:', fnError);
+                      }
                     }
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else if (parsed.type === 'response.completed') {
-                    // Save assistant message to database
+                  } else if (parsed.choices?.[0]?.finish_reason) {
+                    // Save assistant message
                     if (assistantContent.trim()) {
                       const { error: assistantMsgError } = await supabase
                         .from('messages')
                         .insert({
                           conversation_id: conversationId,
                           role: 'assistant',
-                          content: assistantContent,
-                          metadata: { openai_response: parsed }
+                          content: assistantContent.trim(),
+                          metadata: { model: 'gpt-4o', tokens: parsed.usage }
                         });
 
                       if (assistantMsgError) {
                         console.error('Error saving assistant message:', assistantMsgError);
                       } else {
-                        console.log('Saved assistant message to database');
+                        console.log('Saved assistant message');
                       }
                     }
-                    
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
-                  } else {
-                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(parsed)}\n\n`));
+
+                    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                      type: 'response_complete',
+                      usage: parsed.usage
+                    })}\n\n`));
                   }
                 } catch (parseError) {
-                  console.error('Error parsing SSE data:', parseError);
+                  console.error('Error parsing streaming data:', parseError);
                 }
               }
             }
           }
         } catch (error) {
           console.error('Streaming error:', error);
-          controller.error(error);
+          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+            type: 'stream_error',
+            error: error.message
+          })}\n\n`));
         } finally {
           controller.close();
         }
@@ -218,105 +264,152 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in pediatric-ai-chat function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
 
+async function handleBackgroundTask(input: string, taskType: string, patientContext: any, openaiApiKey: string) {
+  const prompts = {
+    medical_research: `Conduct comprehensive medical research on: ${input}. Include latest clinical studies, guidelines from AAP/CDC/WHO, evidence quality assessment, and practical recommendations. Patient context: ${JSON.stringify(patientContext)}`,
+    drug_interaction: `Analyze drug interactions for: ${input}. Check against patient medications, include severity ratings and clinical recommendations. Patient: ${JSON.stringify(patientContext)}`,
+    diagnosis_analysis: `Perform differential diagnosis analysis for: ${input}. Consider patient history, rank by probability with supporting evidence. Patient: ${JSON.stringify(patientContext)}`
+  };
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'You are a pediatric medical expert providing comprehensive analysis.' },
+        { role: 'user', content: prompts[taskType] || input }
+      ],
+      temperature: 0.1,
+      max_tokens: 8000
+    }),
+  });
+
+  const result = await response.json();
+  return result.choices[0].message.content;
+}
+
 async function handleFunctionCall(functionCall: any) {
-  // Handle both old and new function call formats for compatibility
-  const name = functionCall.name || functionCall.function?.name;
-  const args = functionCall.arguments || functionCall.function?.arguments;
+  const { name, arguments: args } = functionCall;
   
   try {
     const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
     
     switch (name) {
       case 'calculate_pediatric_dosage':
-        return calculatePediatricDosage(parsedArgs);
+        return await calculatePediatricDosage(parsedArgs);
       case 'analyze_growth_chart':
-        return analyzeGrowthChart(parsedArgs);
+        return await analyzeGrowthChart(parsedArgs);
       default:
         return { error: `Unknown function: ${name}` };
     }
   } catch (error) {
-    console.error(`Error executing function ${name}:`, error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    return { error: `Function execution failed: ${errorMessage}` };
+    console.error(`Error in function ${name}:`, error);
+    return { error: `Function execution failed: ${error.message}` };
   }
 }
 
-function calculatePediatricDosage(params: any) {
-  const { medication, weight_kg, age_months, indication } = params;
+async function calculatePediatricDosage(params: any) {
+  const { medication, weight_kg, age_years, indication, route = 'oral' } = params;
   
-  // Simplified dosage calculation - in reality this would use comprehensive drug database
-  const dosages: { [key: string]: { mg_per_kg: number, max_dose?: number, frequency: string } } = {
-    'amoxicillin': { mg_per_kg: 20, max_dose: 875, frequency: 'twice daily' },
-    'ibuprofen': { mg_per_kg: 10, max_dose: 600, frequency: 'every 6-8 hours' },
-    'acetaminophen': { mg_per_kg: 15, max_dose: 1000, frequency: 'every 4-6 hours' },
-    'azithromycin': { mg_per_kg: 10, max_dose: 500, frequency: 'once daily' }
+  const medications = {
+    amoxicillin: {
+      oral: { dose_mg_kg_day: 40, max_dose_mg_day: 3000, frequency: 'BID', duration: '7-10 days' }
+    },
+    acetaminophen: {
+      oral: { dose_mg_kg_dose: 15, max_dose_mg_dose: 1000, frequency: 'q6h PRN', max_daily: 4000 }
+    },
+    ibuprofen: {
+      oral: { dose_mg_kg_dose: 10, max_dose_mg_dose: 800, frequency: 'q6-8h PRN', max_daily: 2400 }
+    }
   };
 
-  const drugInfo = dosages[medication.toLowerCase()];
-  if (!drugInfo) {
+  const med = medications[medication.toLowerCase()];
+  if (!med || !med[route]) {
     return {
-      error: `Dosage information not available for ${medication}. Please consult pediatric drug reference.`,
-      recommendation: 'Verify with current pediatric prescribing guidelines'
+      error: `Dosing information not available for ${medication} via ${route} route`,
+      recommendation: 'Please consult drug reference or pharmacist for accurate dosing'
     };
   }
 
-  const calculatedDose = weight_kg * drugInfo.mg_per_kg;
-  const finalDose = drugInfo.max_dose ? Math.min(calculatedDose, drugInfo.max_dose) : calculatedDose;
+  const dosing = med[route];
+  let calculatedDose;
+  const warnings = [];
+
+  if (dosing.dose_mg_kg_day) {
+    calculatedDose = weight_kg * dosing.dose_mg_kg_day;
+    if (dosing.max_dose_mg_day && calculatedDose > dosing.max_dose_mg_day) {
+      calculatedDose = dosing.max_dose_mg_day;
+      warnings.push(`Dose capped at maximum daily dose of ${dosing.max_dose_mg_day}mg`);
+    }
+  } else if (dosing.dose_mg_kg_dose) {
+    calculatedDose = weight_kg * dosing.dose_mg_kg_dose;
+    if (dosing.max_dose_mg_dose && calculatedDose > dosing.max_dose_mg_dose) {
+      calculatedDose = dosing.max_dose_mg_dose;
+      warnings.push(`Single dose capped at ${dosing.max_dose_mg_dose}mg`);
+    }
+  }
+
+  if (age_years < 2 && medication.toLowerCase() === 'ibuprofen') {
+    warnings.push('Ibuprofen not recommended for children under 6 months');
+  }
 
   return {
     medication,
-    weight_kg,
-    age_months,
-    calculated_dose_mg: finalDose,
-    frequency: drugInfo.frequency,
-    calculation: `${weight_kg} kg × ${drugInfo.mg_per_kg} mg/kg = ${calculatedDose} mg`,
-    final_dose: drugInfo.max_dose && calculatedDose > drugInfo.max_dose 
-      ? `Capped at maximum dose of ${drugInfo.max_dose} mg`
-      : `${finalDose} mg`,
-    warning: age_months < 6 ? 'Caution: Dosing in infants <6 months requires special consideration' : null
+    patient: { weight_kg, age_years, indication },
+    calculated_dose_mg: Math.round(calculatedDose * 100) / 100,
+    frequency: dosing.frequency,
+    route,
+    duration: dosing.duration,
+    warnings,
+    calculation_notes: `${weight_kg}kg × ${dosing.dose_mg_kg_day || dosing.dose_mg_kg_dose}mg/kg = ${Math.round(calculatedDose * 100) / 100}mg`,
+    safety_note: 'Always verify dosing with current references and consider patient-specific factors'
   };
 }
 
-function analyzeGrowthChart(params: any) {
+async function analyzeGrowthChart(params: any) {
   const { height_cm, weight_kg, age_months, sex } = params;
   
-  // Simplified growth analysis - in reality this would use WHO/CDC growth charts
   const bmi = weight_kg / Math.pow(height_cm / 100, 2);
   
-  // Rough percentile estimates (would need actual growth chart data)
-  let heightPercentile = 50; // Default to 50th percentile
-  let weightPercentile = 50;
-  let bmiPercentile = 50;
+  const estimatePercentile = (value: number, mean: number, sd: number) => {
+    const zscore = (value - mean) / sd;
+    if (zscore < -2) return '<3rd';
+    if (zscore < -1) return '3rd-15th';
+    if (zscore < 0) return '15th-50th';
+    if (zscore < 1) return '50th-85th';
+    if (zscore < 2) return '85th-97th';
+    return '>97th';
+  };
 
-  // Very simplified logic for demonstration
-  if (height_cm < 85) heightPercentile = 25;
-  if (height_cm > 120) heightPercentile = 75;
-  
-  if (weight_kg < 12) weightPercentile = 25;
-  if (weight_kg > 25) weightPercentile = 75;
+  const heightMean = sex === 'male' ? 70 + (age_months * 0.6) : 68 + (age_months * 0.55);
+  const weightMean = sex === 'male' ? 3.5 + (age_months * 0.25) : 3.3 + (age_months * 0.23);
+  const bmiMean = 16 + (age_months * 0.01);
 
   return {
-    height_cm,
-    weight_kg,
-    age_months,
-    sex,
+    patient: { age_months, sex, height_cm, weight_kg },
     bmi: Math.round(bmi * 10) / 10,
-    height_percentile: heightPercentile,
-    weight_percentile: weightPercentile,
-    bmi_percentile: bmiPercentile,
-    assessment: heightPercentile < 5 || weightPercentile < 5 
-      ? 'Below 5th percentile - consider evaluation for growth concerns'
-      : heightPercentile > 95 || weightPercentile > 95
-      ? 'Above 95th percentile - monitor growth trajectory'
-      : 'Growth parameters within normal range',
-    recommendation: 'Plot on age and sex-appropriate growth charts for accurate percentiles'
+    percentiles: {
+      height: estimatePercentile(height_cm, heightMean, 5),
+      weight: estimatePercentile(weight_kg, weightMean, 2),
+      bmi: estimatePercentile(bmi, bmiMean, 1.5)
+    },
+    assessment: bmi < 16 ? 'Underweight' : bmi > 19 ? 'Overweight risk' : 'Normal range',
+    recommendations: [
+      'Plot on official WHO/CDC growth charts for accurate percentiles',
+      'Consider growth velocity and family history',
+      'Monitor trends rather than single measurements'
+    ],
+    note: 'This is a simplified analysis. Use official growth charts for clinical decisions.'
   };
 }

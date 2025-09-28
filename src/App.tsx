@@ -13,6 +13,7 @@ import Overview from "./pages/Overview";
 import Scheduling from "./pages/Scheduling";
 import Documentation from "./pages/Documentation";
 import AICopilot from "./pages/AICopilot";
+import AdvancedChatInterface from "@/components/chat/AdvancedChatInterface";
 import AdminAgents from "./pages/AdminAgents";
 import ParentPortal from "./pages/ParentPortal";
 import Analytics from "./pages/Analytics";
@@ -33,7 +34,7 @@ const App = () => (
             <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
             <Route path="/scheduling" element={<ProtectedRoute><Scheduling /></ProtectedRoute>} />
             <Route path="/documentation" element={<ProtectedRoute><Documentation /></ProtectedRoute>} />
-            <Route path="/ai-copilot" element={<ProtectedRoute><AICopilot /></ProtectedRoute>} />
+            <Route path="/ai-copilot" element={<ProtectedRoute><AdvancedChatInterface /></ProtectedRoute>} />
             <Route path="/admin-agents" element={<ProtectedRoute><AdminAgents /></ProtectedRoute>} />
             <Route path="/parent-portal" element={<ProtectedRoute><ParentPortal /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
