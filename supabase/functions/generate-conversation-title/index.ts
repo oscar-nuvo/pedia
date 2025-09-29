@@ -94,7 +94,18 @@ serve(async (req) => {
       console.log(`Poll attempt ${pollAttempts}, status:`, responseData.status);
 
       if (responseData.status === 'completed') {
-        const generatedText = responseData.output?.trim();
+        // Extract text from the response output structure
+        let generatedText = '';
+        if (responseData.output && responseData.output.length > 0) {
+          const firstOutput = responseData.output[0];
+          if (firstOutput.content && firstOutput.content.length > 0) {
+            const firstContent = firstOutput.content[0];
+            if (firstContent.type === 'output_text' && firstContent.text) {
+              generatedText = firstContent.text.trim();
+            }
+          }
+        }
+        
         if (generatedText) {
           // Sanitize the title to ensure it's max 4 words
           const words = generatedText.split(' ').filter((word: string) => word.length > 0);
