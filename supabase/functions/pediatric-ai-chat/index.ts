@@ -70,74 +70,6 @@ serve(async (req) => {
 
     console.log(`Saved user message: ${userMessage.id}`);
 
-    // Check if this is the first user message and generate title
-    const { count } = await supabase
-      .from('messages')
-      .select('*', { count: 'exact', head: true })
-      .eq('conversation_id', conversationId);
-
-    if (count === 1) {
-      try {
-        console.log('Generating conversation title...');
-        
-        // Step 1: Create response using Responses API
-        const createResponse = await fetch('https://api.openai.com/v1/responses', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openaiApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-5-nano-2025-08-07',
-            input: `Write a 4 word summary of the following text: ${message}`
-          }),
-        });
-
-        if (createResponse.ok) {
-          const createResult = await createResponse.json();
-          const responseId = createResult.id;
-          
-          if (responseId) {
-            console.log('Response created with ID:', responseId);
-            
-            // Step 2: Retrieve the generated response
-            const getResponse = await fetch(`https://api.openai.com/v1/responses/${responseId}`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${openaiApiKey}`,
-                'Content-Type': 'application/json',
-              },
-            });
-            
-            if (getResponse.ok) {
-              const getResult = await getResponse.json();
-              const generatedTitle = getResult.output || 'New Conversation';
-              
-              // Update conversation title
-              const { error: titleError } = await supabase
-                .from('conversations')
-                .update({ title: generatedTitle.trim() })
-                .eq('id', conversationId);
-
-              if (titleError) {
-                console.error('Error updating conversation title:', titleError);
-              } else {
-                console.log('Conversation title updated to:', generatedTitle.trim());
-              }
-            } else {
-              console.error('Failed to retrieve response:', await getResponse.text());
-            }
-          } else {
-            console.error('No response ID received from create response');
-          }
-        } else {
-          console.error('Failed to create response:', await createResponse.text());
-        }
-      } catch (titleError) {
-        console.error('Error generating title:', titleError);
-        // Continue with conversation even if title generation fails
-      }
-    }
 
     // Build conversation context
     const { data: recentMessages } = await supabase
@@ -283,6 +215,7 @@ serve(async (req) => {
     let currentResponseId = '';
     let reasoningSummary = '';
     let sawFinalEvent = false;
+    let messagePersisted = false;
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -295,7 +228,20 @@ serve(async (req) => {
         let lineBuffer = '';
 
         const persistAssistantMessage = async () => {
-          if (!assistantContent.trim()) return;
+          if (!assistantContent.trim() || messagePersisted) return;
+
+          // Check if message already exists to prevent duplicates
+          const { data: existingMessage } = await supabase
+            .from('messages')
+            .select('id')
+            .eq('response_id', currentResponseId)
+            .maybeSingle();
+
+          if (existingMessage) {
+            console.log('Message already persisted for response ID:', currentResponseId);
+            messagePersisted = true;
+            return;
+          }
 
           console.log('Persisting assistant message...', {
             conversationId,
@@ -306,7 +252,7 @@ serve(async (req) => {
           try {
             const { data: savedMessage, error: assistantMsgError } = await supabase
               .from('messages')
-              .insert({
+              .upsert({
                 conversation_id: conversationId,
                 role: 'assistant',
                 content: assistantContent.trim(),
@@ -316,6 +262,8 @@ serve(async (req) => {
                   responseId: currentResponseId,
                   reasoningSummary: reasoningSummary || undefined
                 }
+              }, {
+                onConflict: 'response_id'
               })
               .select()
               .single();
@@ -328,6 +276,7 @@ serve(async (req) => {
               })}\n\n`));
             } else {
               console.log('Successfully saved assistant message:', savedMessage.id);
+              messagePersisted = true;
               
               // Update conversation metadata
               const { error: updateError } = await supabase
@@ -439,7 +388,7 @@ serve(async (req) => {
                         result: { error: fnError instanceof Error ? fnError.message : 'Function execution failed' }
                       })}\n\n`));
                     }
-                  } else if (parsed.type === 'response.completed' || parsed.type === 'response.done' || parsed.type === 'response.output_text.done') {
+                  } else if (parsed.type === 'response.completed') {
                     console.log('Final event received:', parsed.type);
                     sawFinalEvent = true;
                     
@@ -448,6 +397,16 @@ serve(async (req) => {
                     }
                     
                     await persistAssistantMessage();
+
+                    // Generate title for first message after response is complete
+                    const { count } = await supabase
+                      .from('messages')
+                      .select('*', { count: 'exact', head: true })
+                      .eq('conversation_id', conversationId);
+
+                    if (count === 2) { // 1 user + 1 assistant message = first complete exchange
+                      generateConversationTitle(conversationId, message, openaiApiKey, supabase);
+                    }
 
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
                       type: 'response_complete',
@@ -661,4 +620,105 @@ async function analyzeGrowthChart(params: any) {
     ],
     note: 'This is a simplified analysis. Use official growth charts for clinical decisions.'
   };
+}
+
+// Generate conversation title using OpenAI Responses API
+async function generateConversationTitle(conversationId: string, message: string, openaiApiKey: string, supabase: any) {
+  try {
+    console.log('Generating conversation title for:', conversationId);
+    
+    // Step 1: Create response using Responses API
+    const createResponse = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5-nano-2025-08-07',
+        input: `Write a 4 word summary of the following text: ${message}`
+      }),
+    });
+
+    if (!createResponse.ok) {
+      console.error('Failed to create title response:', await createResponse.text());
+      return;
+    }
+
+    const createResult = await createResponse.json();
+    const responseId = createResult.id;
+    
+    if (!responseId) {
+      console.error('No response ID received from create response');
+      return;
+    }
+
+    console.log('Title response created with ID:', responseId);
+    
+    // Step 2: Poll the response until completion
+    let attempts = 0;
+    const maxAttempts = 10;
+    let generatedTitle = 'New Conversation';
+    
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 300)); // Wait 300ms between polls
+      
+      const getResponse = await fetch(`https://api.openai.com/v1/responses/${responseId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (getResponse.ok) {
+        const getResult = await getResponse.json();
+        console.log('Title response status:', getResult.status, 'attempt:', attempts + 1);
+        
+        // Extract title from various possible response formats
+        if (getResult.output_text) {
+          generatedTitle = getResult.output_text;
+          break;
+        } else if (getResult.output && typeof getResult.output === 'string') {
+          generatedTitle = getResult.output;
+          break;
+        } else if (getResult.status === 'completed' && getResult.response?.output_text) {
+          generatedTitle = getResult.response.output_text;
+          break;
+        }
+        
+        if (getResult.status === 'completed' || getResult.status === 'failed') {
+          break;
+        }
+      } else {
+        console.error('Failed to retrieve title response, attempt', attempts + 1, ':', await getResponse.text());
+      }
+      
+      attempts++;
+    }
+    
+    // Sanitize and limit title to 4 words
+    const sanitizedTitle = generatedTitle
+      .replace(/[^\w\s]/g, '') // Remove punctuation
+      .trim()
+      .split(/\s+/)
+      .slice(0, 4)
+      .join(' ') || 'New Conversation';
+    
+    console.log('Generated title:', sanitizedTitle);
+    
+    // Update conversation title
+    const { error: titleError } = await supabase
+      .from('conversations')
+      .update({ title: sanitizedTitle })
+      .eq('id', conversationId);
+
+    if (titleError) {
+      console.error('Error updating conversation title:', titleError);
+    } else {
+      console.log('Conversation title updated successfully to:', sanitizedTitle);
+    }
+  } catch (titleError) {
+    console.error('Error generating title:', titleError);
+  }
 }
