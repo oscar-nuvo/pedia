@@ -710,6 +710,12 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         }));
         break;
 
+      case 'title_updated':
+        console.log('Title updated:', event.title, 'for conversation:', event.conversationId);
+        // Immediately refresh conversations to show new title
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        break;
+
       default:
         console.log('Unhandled Responses API event:', event);
     }

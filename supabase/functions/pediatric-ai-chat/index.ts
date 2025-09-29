@@ -196,7 +196,7 @@ serve(async (req) => {
         input: buildConversationInput(recentMessages || [], message, patientContext, fileIds),
         tools,
         stream: true,
-        store: true,
+        store: true, // Already enabled
         background: options.background || false,
         ...(previousResponseId && { previous_response_id: previousResponseId }),
         max_output_tokens: 4000
@@ -405,7 +405,7 @@ serve(async (req) => {
                       .eq('conversation_id', conversationId);
 
                     if (count === 2) { // 1 user + 1 assistant message = first complete exchange
-                      generateConversationTitle(conversationId, message, openaiApiKey, supabase);
+                      generateConversationTitle(conversationId, message, openaiApiKey, supabase, controller);
                     }
 
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
@@ -623,102 +623,130 @@ async function analyzeGrowthChart(params: any) {
 }
 
 // Generate conversation title using OpenAI Responses API
-async function generateConversationTitle(conversationId: string, message: string, openaiApiKey: string, supabase: any) {
+async function generateConversationTitle(conversationId: string, message: string, openaiApiKey: string, supabase: any, controller?: ReadableStreamDefaultController) {
+  console.log('Starting conversation title generation for:', conversationId);
+  
   try {
-    console.log('Generating conversation title for:', conversationId);
-    
-    // Step 1: Create response using Responses API
-    const createResponse = await fetch('https://api.openai.com/v1/responses', {
+    // Create a new response for title generation with store: true
+    const titleResponse = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-nano-2025-08-07',
-        input: `Write a 4 word summary of the following text: ${message}`
+        prompt: {
+          id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f"
+        },
+        input: [{
+          role: "user",
+          content: [{
+            type: "input_text",
+            text: `Create a short 4-word title for this medical conversation: "${message}"`
+          }]
+        }],
+        max_output_tokens: 20,
+        store: true // Enable storage for GET requests
       }),
     });
 
-    if (!createResponse.ok) {
-      console.error('Failed to create title response:', await createResponse.text());
-      return;
+    if (!titleResponse.ok) {
+      console.error('Title generation request failed:', await titleResponse.text());
+      throw new Error(`Title generation failed: ${titleResponse.status}`);
     }
 
-    const createResult = await createResponse.json();
-    const responseId = createResult.id;
+    const titleData = await titleResponse.json();
+    const responseId = titleData.id;
     
-    if (!responseId) {
-      console.error('No response ID received from create response');
-      return;
-    }
+    console.log('Title generation response created:', responseId);
 
-    console.log('Title response created with ID:', responseId);
-    
-    // Step 2: Poll the response until completion
+    // Poll for completion using GET /v1/responses/{id}
     let attempts = 0;
-    const maxAttempts = 10;
-    let generatedTitle = 'New Conversation';
+    const maxAttempts = 15;
     
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 300)); // Wait 300ms between polls
+      await new Promise(resolve => setTimeout(resolve, 300)); // 300ms delay
       
-      const getResponse = await fetch(`https://api.openai.com/v1/responses/${responseId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (getResponse.ok) {
-        const getResult = await getResponse.json();
-        console.log('Title response status:', getResult.status, 'attempt:', attempts + 1);
-        
-        // Extract title from various possible response formats
-        if (getResult.output_text) {
-          generatedTitle = getResult.output_text;
-          break;
-        } else if (getResult.output && typeof getResult.output === 'string') {
-          generatedTitle = getResult.output;
-          break;
-        } else if (getResult.status === 'completed' && getResult.response?.output_text) {
-          generatedTitle = getResult.response.output_text;
-          break;
+      try {
+        const getResult = await fetch(`https://api.openai.com/v1/responses/${responseId}`, {
+          headers: {
+            'Authorization': `Bearer ${openaiApiKey}`,
+          },
+        });
+
+        if (getResult.ok) {
+          const resultData = await getResult.json();
+          console.log('Title generation poll attempt:', attempts, 'Status:', resultData.status);
+          
+          // Extract title from various possible locations
+          let rawTitle = '';
+          if (resultData.output_text) {
+            rawTitle = resultData.output_text;
+          } else if (resultData.output && typeof resultData.output === 'string') {
+            rawTitle = resultData.output;
+          } else if (resultData.output && resultData.output.text) {
+            rawTitle = resultData.output.text;
+          } else if (resultData.status === 'completed' && resultData.response?.output_text) {
+            rawTitle = resultData.response.output_text;
+          }
+          
+          if (rawTitle) {
+            console.log('Raw title generated:', rawTitle);
+            
+            // Aggressively clean and sanitize title
+            const sanitizedTitle = rawTitle
+              .replace(/["'`]/g, '') // Remove quotes
+              .replace(/[^\w\s-]/g, '') // Remove punctuation except hyphens
+              .replace(/\s+/g, ' ') // Normalize whitespace
+              .trim()
+              .split(/\s+/) // Split by whitespace
+              .slice(0, 4) // Take first 4 words
+              .join(' '); // Join back
+            
+            console.log('Sanitized title:', sanitizedTitle);
+            
+            if (sanitizedTitle && sanitizedTitle.length > 0) {
+              // Update conversation title and refresh timestamp
+              const { error: updateError } = await supabase
+                .from('conversations')
+                .update({ 
+                  title: sanitizedTitle,
+                  updated_at: new Date().toISOString() // Refresh timestamp for UI ordering
+                })
+                .eq('id', conversationId);
+
+              if (updateError) {
+                console.error('Error updating conversation title:', updateError);
+              } else {
+                console.log('Successfully updated conversation title:', sanitizedTitle);
+                
+                // Send SSE event to notify frontend of title update
+                if (controller) {
+                  controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                    type: 'title_updated',
+                    conversationId,
+                    title: sanitizedTitle
+                  })}\n\n`));
+                }
+              }
+            }
+            break;
+          }
+        } else {
+          console.error('GET /v1/responses failed:', getResult.status, await getResult.text());
         }
-        
-        if (getResult.status === 'completed' || getResult.status === 'failed') {
-          break;
-        }
-      } else {
-        console.error('Failed to retrieve title response, attempt', attempts + 1, ':', await getResponse.text());
+      } catch (pollError) {
+        console.error('Error during title polling attempt:', attempts, pollError);
       }
       
       attempts++;
     }
     
-    // Sanitize and limit title to 4 words
-    const sanitizedTitle = generatedTitle
-      .replace(/[^\w\s]/g, '') // Remove punctuation
-      .trim()
-      .split(/\s+/)
-      .slice(0, 4)
-      .join(' ') || 'New Conversation';
-    
-    console.log('Generated title:', sanitizedTitle);
-    
-    // Update conversation title
-    const { error: titleError } = await supabase
-      .from('conversations')
-      .update({ title: sanitizedTitle })
-      .eq('id', conversationId);
-
-    if (titleError) {
-      console.error('Error updating conversation title:', titleError);
-    } else {
-      console.log('Conversation title updated successfully to:', sanitizedTitle);
+    if (attempts >= maxAttempts) {
+      console.log('Title generation timed out after', maxAttempts, 'attempts');
     }
-  } catch (titleError) {
-    console.error('Error generating title:', titleError);
+    
+  } catch (error) {
+    console.error('Error generating conversation title:', error);
   }
 }
