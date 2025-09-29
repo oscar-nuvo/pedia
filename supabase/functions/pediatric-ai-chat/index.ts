@@ -70,6 +70,21 @@ serve(async (req) => {
 
     console.log(`Saved user message: ${userMessage.id}`);
 
+    // Check if this is the first user message in the conversation
+    const { count: userMessageCount } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('conversation_id', conversationId)
+      .eq('role', 'user');
+
+    // If this is the first user message, trigger title generation (fire-and-forget)
+    if (userMessageCount === 1) {
+      console.log('First user message detected, triggering title generation');
+      supabase.functions.invoke('generate-conversation-title', {
+        body: { conversationId, userMessage: message }
+      }).catch(error => console.error('Title generation failed:', error));
+    }
+
     // Build conversation context
     const { data: recentMessages } = await supabase
       .from('messages')

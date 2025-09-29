@@ -441,7 +441,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
       }
 
     } finally {
-      // Invalidate queries to refresh messages
+      // Invalidate queries to refresh messages and conversations (will pick up title updates)
       queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     }
