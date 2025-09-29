@@ -94,17 +94,45 @@ serve(async (req) => {
       console.log(`Poll attempt ${pollAttempts}, status:`, responseData.status);
 
       if (responseData.status === 'completed') {
-        console.log('Response completed, extracting title from text field');
+        console.log('Response completed, extracting title from output structure');
         
         let generatedText = '';
         
-        // The OpenAI Responses API stores the generated text in the "text" field
-        if (responseData.text && typeof responseData.text === 'string') {
+        // 1) First try responseData.text if it's a string
+        if (typeof responseData.text === 'string' && responseData.text.trim()) {
           generatedText = responseData.text.trim();
-          console.log('Extracted text from responseData.text:', generatedText);
-        } else {
-          console.log('No text field found or text is not a string');
-          console.log('Available responseData keys:', Object.keys(responseData));
+          console.log('Extracted from responseData.text (string):', generatedText);
+        }
+        
+        // 2) Otherwise parse the output array structure
+        if (!generatedText && Array.isArray(responseData.output)) {
+          const parts: string[] = [];
+          for (const item of responseData.output) {
+            const content = item?.content;
+            if (Array.isArray(content)) {
+              for (const c of content) {
+                if (c && c.type === 'output_text' && typeof c.text === 'string') {
+                  parts.push(c.text);
+                } else if (c && typeof c.text === 'string') {
+                  parts.push(c.text);
+                } else if (typeof c === 'string') {
+                  parts.push(c);
+                }
+              }
+            }
+          }
+          generatedText = parts.join(' ').trim();
+          console.log('Extracted from output[].content[].text:', generatedText);
+        }
+        
+        // 3) Fallback: direct string output
+        if (!generatedText && typeof responseData.output === 'string') {
+          generatedText = responseData.output.trim();
+          console.log('Extracted from responseData.output (string):', generatedText);
+        }
+        
+        if (!generatedText) {
+          console.log('No generatedText found, available keys:', Object.keys(responseData));
         }
         
         if (generatedText) {
