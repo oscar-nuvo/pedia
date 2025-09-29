@@ -94,15 +94,51 @@ serve(async (req) => {
       console.log(`Poll attempt ${pollAttempts}, status:`, responseData.status);
 
       if (responseData.status === 'completed') {
+        // Debug: Log the full response structure to understand the format
+        console.log('Full responseData:', JSON.stringify(responseData, null, 2));
+        
         // Extract text from the response output structure
         let generatedText = '';
-        if (responseData.output && responseData.output.length > 0) {
-          const firstOutput = responseData.output[0];
-          if (firstOutput.content && firstOutput.content.length > 0) {
-            const firstContent = firstOutput.content[0];
-            if (firstContent.type === 'output_text' && firstContent.text) {
-              generatedText = firstContent.text.trim();
+        
+        // Check different possible response formats
+        if (responseData.output) {
+          console.log('responseData.output exists:', typeof responseData.output);
+          console.log('responseData.output content:', JSON.stringify(responseData.output, null, 2));
+          
+          if (Array.isArray(responseData.output) && responseData.output.length > 0) {
+            const firstOutput = responseData.output[0];
+            console.log('firstOutput:', JSON.stringify(firstOutput, null, 2));
+            
+            if (firstOutput.content && firstOutput.content.length > 0) {
+              const firstContent = firstOutput.content[0];
+              console.log('firstContent:', JSON.stringify(firstContent, null, 2));
+              
+              if (firstContent.type === 'output_text' && firstContent.text) {
+                generatedText = firstContent.text.trim();
+                console.log('Extracted from output_text:', generatedText);
+              }
             }
+          } else if (typeof responseData.output === 'string') {
+            // Maybe output is directly a string
+            generatedText = responseData.output.trim();
+            console.log('Extracted from direct string:', generatedText);
+          }
+        }
+        
+        // Check for other possible response fields
+        if (!generatedText && responseData.response) {
+          console.log('Checking responseData.response:', JSON.stringify(responseData.response, null, 2));
+          if (typeof responseData.response === 'string') {
+            generatedText = responseData.response.trim();
+            console.log('Extracted from response field:', generatedText);
+          }
+        }
+        
+        if (!generatedText && responseData.content) {
+          console.log('Checking responseData.content:', JSON.stringify(responseData.content, null, 2));
+          if (typeof responseData.content === 'string') {
+            generatedText = responseData.content.trim();
+            console.log('Extracted from content field:', generatedText);
           }
         }
         
@@ -111,6 +147,9 @@ serve(async (req) => {
           const words = generatedText.split(' ').filter((word: string) => word.length > 0);
           title = words.slice(0, 4).join(' ');
           console.log(`Generated title: "${title}"`);
+        } else {
+          console.log('No generatedText found, using fallback title');
+          console.log('Available responseData keys:', Object.keys(responseData));
         }
         break;
       } else if (responseData.status === 'failed') {
