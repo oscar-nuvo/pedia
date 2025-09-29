@@ -79,7 +79,7 @@ serve(async (req) => {
     if (count === 1) {
       try {
         console.log('Generating conversation title...');
-        const titleResponse = await fetch('https://api.openai.com/v1/responses', {
+        const titleResponse = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${openaiApiKey}`,
@@ -87,13 +87,16 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             model: 'gpt-5-nano-2025-08-07',
-            input: `Write a 4 word summary of the following text: ${message}`
+            messages: [
+              { role: 'user', content: `Write a 4 word summary of the following text: ${message}` }
+            ],
+            max_completion_tokens: 50
           }),
         });
 
         if (titleResponse.ok) {
           const titleResult = await titleResponse.json();
-          const generatedTitle = titleResult.response?.output_text || 'New Conversation';
+          const generatedTitle = titleResult.choices?.[0]?.message?.content || 'New Conversation';
           
           // Update conversation title
           const { error: titleError } = await supabase
