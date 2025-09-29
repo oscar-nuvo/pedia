@@ -70,7 +70,6 @@ serve(async (req) => {
 
     console.log(`Saved user message: ${userMessage.id}`);
 
-
     // Build conversation context
     const { data: recentMessages } = await supabase
       .from('messages')
@@ -196,7 +195,7 @@ serve(async (req) => {
         input: buildConversationInput(recentMessages || [], message, patientContext, fileIds),
         tools,
         stream: true,
-        store: true, // Already enabled
+        store: true,
         background: options.background || false,
         ...(previousResponseId && { previous_response_id: previousResponseId }),
         max_output_tokens: 4000
@@ -215,7 +214,6 @@ serve(async (req) => {
     let currentResponseId = '';
     let reasoningSummary = '';
     let sawFinalEvent = false;
-    let messagePersisted = false;
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -228,20 +226,7 @@ serve(async (req) => {
         let lineBuffer = '';
 
         const persistAssistantMessage = async () => {
-          if (!assistantContent.trim() || messagePersisted) return;
-
-          // Check if message already exists to prevent duplicates
-          const { data: existingMessage } = await supabase
-            .from('messages')
-            .select('id')
-            .eq('response_id', currentResponseId)
-            .maybeSingle();
-
-          if (existingMessage) {
-            console.log('Message already persisted for response ID:', currentResponseId);
-            messagePersisted = true;
-            return;
-          }
+          if (!assistantContent.trim()) return;
 
           console.log('Persisting assistant message...', {
             conversationId,
@@ -252,7 +237,7 @@ serve(async (req) => {
           try {
             const { data: savedMessage, error: assistantMsgError } = await supabase
               .from('messages')
-              .upsert({
+              .insert({
                 conversation_id: conversationId,
                 role: 'assistant',
                 content: assistantContent.trim(),
@@ -262,8 +247,6 @@ serve(async (req) => {
                   responseId: currentResponseId,
                   reasoningSummary: reasoningSummary || undefined
                 }
-              }, {
-                onConflict: 'response_id'
               })
               .select()
               .single();
@@ -276,7 +259,6 @@ serve(async (req) => {
               })}\n\n`));
             } else {
               console.log('Successfully saved assistant message:', savedMessage.id);
-              messagePersisted = true;
               
               // Update conversation metadata
               const { error: updateError } = await supabase
@@ -388,7 +370,7 @@ serve(async (req) => {
                         result: { error: fnError instanceof Error ? fnError.message : 'Function execution failed' }
                       })}\n\n`));
                     }
-                  } else if (parsed.type === 'response.completed') {
+                  } else if (parsed.type === 'response.completed' || parsed.type === 'response.done' || parsed.type === 'response.output_text.done') {
                     console.log('Final event received:', parsed.type);
                     sawFinalEvent = true;
                     
@@ -397,19 +379,6 @@ serve(async (req) => {
                     }
                     
                     await persistAssistantMessage();
-
-                    // Generate title for first message after response is complete
-                    const { count } = await supabase
-                      .from('messages')
-                      .select('*', { count: 'exact', head: true })
-                      .eq('conversation_id', conversationId);
-
-                    if (count === 2) { // 1 user + 1 assistant message = first complete exchange
-                      // Fire-and-forget title generation
-                      supabase.functions.invoke('generate-conversation-title', {
-                        body: { conversationId, userMessage: message }
-                      }).catch(error => console.error('Title generation failed:', error));
-                    }
 
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
                       type: 'response_complete',
