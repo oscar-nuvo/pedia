@@ -3,15 +3,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// ✅ SECURE: Get credentials from environment variables, not hardcoded
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://pgypyipdmrhrutegapsx.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  console.error(
-    'Missing Supabase configuration. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.'
-  );
-}
+// Supabase configuration
+const SUPABASE_URL = "https://pgypyipdmrhrutegapsx.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBneXB5aXBkbXJocnV0ZWdhcHN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTQzNDcsImV4cCI6MjA3NDU5MDM0N30.nJivPOj9ygfDFJZ6xyVFYTeM1-BUsTy7MaOUvtF882E";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
