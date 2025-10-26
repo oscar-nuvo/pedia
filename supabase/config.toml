@@ -2,3 +2,12 @@ project_id = "pgypyipdmrhrutegapsx"
 
 [functions.generate-conversation-title]
 verify_jwt = false
+
+[functions.pediatric-ai-chat]
+verify_jwt = true
+
+[functions.upload-file-to-openai]
+verify_jwt = true
+
+[functions.delete-conversation-file]
+verify_jwt = true
