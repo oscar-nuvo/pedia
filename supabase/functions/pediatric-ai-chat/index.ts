@@ -96,7 +96,7 @@ serve(async (req) => {
     // Build input messages for prompt library with content parts format
     const buildConversationInput = (recentMessages: any[], message: string, patientContext: any, fileIds: string[]) => {
       const messages: any[] = [];
-      
+
       // Add patient context as system message if provided
       if (patientContext) {
         messages.push({
@@ -109,46 +109,51 @@ serve(async (req) => {
           ]
         });
       }
-      
+
       // Add conversation history
       if (recentMessages?.length > 0) {
         messages.push(...recentMessages.map(msg => ({
           role: msg.role,
           content: [
             {
-              type: msg.role === "assistant" ? "output_text" : "input_text", 
+              type: msg.role === "assistant" ? "output_text" : "input_text",
               text: msg.content
             }
           ]
         })));
       }
-      
-      // Add current message if not already in recent messages
+
+      // Add current message with files if not already in recent messages
       if (!recentMessages?.some(msg => msg.content === message)) {
+        const userMessageContent: any[] = [
+          {
+            type: "input_text",
+            text: message
+          }
+        ];
+
+        // Add document content blocks for each file
+        if (fileIds.length > 0) {
+          for (const fileId of fileIds) {
+            userMessageContent.push({
+              type: "document",
+              document: {
+                type: "text",
+                source: {
+                  type: "file",
+                  file_id: fileId
+                }
+              }
+            });
+          }
+        }
+
         messages.push({
           role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: message
-            }
-          ]
+          content: userMessageContent
         });
       }
-      
-      // Add file context if provided
-      if (fileIds.length > 0) {
-        messages.push({
-          role: "system",
-          content: [
-            {
-              type: "input_text",
-              text: `File IDs referenced: ${fileIds.join(', ')}`
-            }
-          ]
-        });
-      }
-      
+
       return messages;
     };
 

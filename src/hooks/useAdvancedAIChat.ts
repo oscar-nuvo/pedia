@@ -299,7 +299,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBneXB5aXBkbXJocnV0ZWdhcHN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTQzNDcsImV4cCI6MjA3NDU5MDM0N30.nJivPOj9ygfDFJZ6xyVFYTeM1-BUsTy7MaOUvtF882E'
+            // ✅ SECURE: Edge Function handles credentials via Supabase Secrets
           },
           body: JSON.stringify(requestBody),
         });
@@ -321,7 +321,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBneXB5aXBkbXJocnV0ZWdhcHN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwMTQzNDcsImV4cCI6MjA3NDU5MDM0N30.nJivPOj9ygfDFJZ6xyVFYTeM1-BUsTy7MaOUvtF882E'
+          // ✅ SECURE: Edge Function handles credentials via Supabase Secrets
         },
         body: JSON.stringify(requestBody),
         signal: abortControllerRef.current?.signal
