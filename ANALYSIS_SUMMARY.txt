@@ -1,0 +1,312 @@
+PEDIATRICAI CODEBASE ANALYSIS - COMPREHENSIVE SUMMARY
+=====================================================
+
+PROJECT: PediatricAI (Pedia)
+ANALYSIS DATE: 2025-10-25
+STATUS: Complete knowledge base created
+
+DELIVERABLE: CLAUDE.md (1027 lines)
+Location: /Users/oscaroliva/Desktop/Pedia/CLAUDE.md
+
+================================================================================
+KEY FINDINGS
+================================================================================
+
+1. DEVELOPMENT COMMANDS
+   - npm run dev (localhost:8080)
+   - npm run build (production)
+   - npm run lint (ESLint)
+   - supabase functions deploy (edge functions)
+   - supabase functions serve (local testing)
+
+2. PROJECT STRUCTURE
+   Frontend:    React 18 + TypeScript + Vite
+   Backend:     Supabase (PostgreSQL) + Deno Edge Functions
+   AI:          OpenAI Responses API with streaming
+   Styling:     Tailwind CSS + shadcn/ui components
+   State:       React Query + Context API
+
+3. ARCHITECTURE
+   
+   FRONTEND STACK:
+   - App.tsx (routing, providers)
+   - Pages: Auth, Index, Overview, Analytics, AdminAgents, etc.
+   - Components: AdvancedChatInterface (main chat UI), UI components
+   - Hooks: useAuth (session), useAdvancedAIChat (chat logic)
+   - State: React Query for server state, useState for UI state
+
+   BACKEND STACK:
+   - Supabase Auth (JWT-based)
+   - PostgreSQL with RLS (Row-Level Security)
+   - Edge Functions (Deno runtime)
+   - Realtime subscriptions via Postgres changes
+   - Storage buckets for file uploads
+
+   AI STACK:
+   - OpenAI Responses API (streaming, reasoning, function calling)
+   - Prompt library (ID: pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f)
+   - Tools: calculate_pediatric_dosage, analyze_growth_chart
+
+4. CRITICAL PATTERNS
+
+   A. STREAMING ARCHITECTURE
+      - SSE (Server-Sent Events) for real-time responses
+      - Three-tier fallback for message persistence:
+        * Tier 1: Edge Function persists during streaming
+        * Tier 2: Client fallback after 3s (if no response_saved)
+        * Tier 3: Client fallback on stream end (if no response_complete)
+      - Idempotency via response_id field
+      - AbortController for canceling long-running streams
+
+   B. STATE MANAGEMENT
+      - Server state: React Query (conversations, messages)
+      - UI state: useState (streaming text, reasoning, functions)
+      - Realtime: Postgres change subscriptions
+      - Auth: Context API (useAuth hook)
+
+   C. AUTHENTICATION
+      - Supabase Auth with localStorage
+      - Auto token refresh enabled
+      - JWT validation in Edge Functions
+      - Protected routes via ProtectedRoute component
+
+   D. FUNCTION CALLING
+      - JSON Schema tool definitions
+      - Streaming arguments (function_arguments_delta events)
+      - Medical calculation tools with safety checks
+      - Result handling in Edge Function
+
+   E. DATABASE & RLS
+      - RLS policies for user isolation
+      - Cascading deletes for data consistency
+      - Indexes on user_id, conversation_id, created_at
+      - Realtime enabled on messages table
+      - JSONB metadata columns for flexibility
+
+5. WORKFLOWS
+
+   CHAT MESSAGE FLOW (10 steps):
+   1. User types in AdvancedChatInterface
+   2. handleSendMessage() uploads files (if any)
+   3. POST to Edge Function with conversation context
+   4. Edge Function validates JWT, saves user message
+   5. Checks if first message, triggers title generation
+   6. Builds conversation context (last 20 messages)
+   7. Calls OpenAI Responses API with streaming
+   8. OpenAI streams events (text_delta, reasoning, functions)
+   9. Edge Function re-streams as SSE to client
+   10. Client processes events, updates UI, persists to DB
+
+   TITLE GENERATION (fire-and-forget):
+   - Triggered on first user message
+   - Edge Function calls generate-conversation-title
+   - Generates 4-word summary via OpenAI
+   - Polls for completion (1s intervals, 30s max)
+   - Updates conversations.title
+   - Frontend auto-refreshes via realtime subscription
+
+6. DATABASE SCHEMA
+
+   conversations:
+   - id UUID (primary key)
+   - user_id UUID (references auth.users, RLS)
+   - title TEXT
+   - metadata JSONB
+   - created_at, updated_at TIMESTAMPTZ
+
+   messages:
+   - id UUID (primary key)
+   - conversation_id UUID (foreign key, cascade delete)
+   - role TEXT (user/assistant/system)
+   - content TEXT
+   - response_id TEXT (idempotency, OpenAI response tracking)
+   - metadata JSONB
+   - created_at TIMESTAMPTZ
+   - Realtime enabled: REPLICA IDENTITY FULL
+
+   conversation_files:
+   - id UUID
+   - conversation_id UUID
+   - openai_file_id TEXT (storage path)
+   - filename, content_type, size_bytes
+
+   profiles:
+   - user_id UUID (RLS), first_name, last_name, email, avatar_url
+
+   organizations:
+   - id UUID, name, subscription_tier, settings JSONB
+
+   user_roles:
+   - user_id, organization_id, role (RBAC: super_admin/admin/doctor/nurse)
+
+7. EDGE FUNCTIONS
+
+   pediatric-ai-chat (609 lines):
+   - POST /functions/v1/pediatric-ai-chat
+   - Authenticate user (JWT)
+   - Save user message
+   - Fetch conversation context
+   - Call OpenAI Responses API
+   - Stream SSE response
+   - Persist assistant message (with error handling)
+   - Handle function calls (dosage, growth chart)
+   - Returns: text_delta, reasoning_delta, function_result, response_complete
+
+   generate-conversation-title (184 lines):
+   - Invoked by main edge function
+   - Generates 4-word title
+   - Polls OpenAI response until completed
+   - Updates conversations.title
+   - Example: "My child has fever" → "Fever management in children"
+
+8. TECHNOLOGIES & VERSIONS
+
+   React 18.3.1 - UI framework
+   TypeScript 5.5.3 - Type safety
+   Vite 5.4.1 - Build tool
+   React Router 6.26.2 - Routing
+   React Query 5.56.2 - Server state
+   Supabase 2.58.0 - Backend/Auth
+   Tailwind CSS 3.4.11 - Styling
+   shadcn/ui - Component library (100+ components)
+   Deno - Edge Function runtime
+   OpenAI API - Responses API
+
+9. SECURITY PRACTICES
+
+   Authentication:
+   - Supabase Auth (email/password with JWT)
+   - localStorage for session persistence
+   - Auto token refresh
+   - JWT validation in Edge Functions
+
+   Authorization:
+   - RLS policies for row-level data isolation
+   - RBAC with user_roles table
+   - Role-based policies (admin, doctor, nurse, etc.)
+   - Organization-scoped access
+
+   Data Protection:
+   - CORS headers in Edge Functions
+   - API keys in environment variables
+   - File uploads stored with user namespace
+   - Cascading deletes for data consistency
+
+10. DEBUGGING & DEPLOYMENT
+
+    Local Development:
+    - npm run dev (Vite dev server)
+    - supabase functions serve (local Edge Functions)
+    - Console logging in components and hooks
+    - React Query DevTools available
+
+    Deployment:
+    - Frontend: npm run build → deploy dist/
+    - Edge Functions: supabase functions deploy [name]
+    - Database: supabase db push (migrations auto-applied)
+    - GitHub: push to main (Lovable auto-deployment)
+
+================================================================================
+ARCHITECTURAL INSIGHTS
+================================================================================
+
+STRENGTHS:
+1. Real-time streaming with three-tier fallback ensures reliable message delivery
+2. RLS provides strong data isolation without app-level logic
+3. Fire-and-forget title generation decouples workflow
+4. Idempotency via response_id prevents duplicate messages
+5. Realtime subscriptions provide instant UI updates
+6. Medical dosing calculations with safety checks
+7. Type-safe frontend with TypeScript
+8. Clean separation: pages, components, hooks, integrations
+
+SCALABILITY CONSIDERATIONS:
+1. Message pagination (currently loads conversation history)
+2. Function call execution could move to background workers
+3. Medical reference data could be cached (Redis)
+4. Conversation summaries could be pre-computed
+5. File upload limits should be enforced
+
+SECURITY CONSIDERATIONS:
+1. HIPAA compliance: audit logging for medical data access
+2. End-to-end encryption for sensitive patient data
+3. Rate limiting per user/organization
+4. Medical content validation before function calls
+5. RBAC role-based tool access
+
+================================================================================
+FILES CREATED
+================================================================================
+
+CLAUDE.md (1027 lines) - Comprehensive guide covering:
+  - Project overview
+  - Development commands
+  - Project structure
+  - High-level architecture diagrams
+  - Key architectural patterns (6 patterns explained)
+  - Critical workflows (4 workflows detailed)
+  - Database schema summary
+  - Edge Functions deployment
+  - Technology stack
+  - Configuration files
+  - Security & RLS patterns
+  - Common tasks
+  - Debugging tips
+  - Future considerations
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+START DEV SERVER:
+  npm run dev
+
+BUILD FOR PRODUCTION:
+  npm run build
+
+LINT CODE:
+  npm run lint
+
+DEPLOY EDGE FUNCTION:
+  supabase functions deploy pediatric-ai-chat --project-id pgypyipdmrhrutegapsx
+
+LOCAL TESTING:
+  supabase functions serve
+
+MAIN FILES TO UNDERSTAND:
+  1. src/hooks/useAdvancedAIChat.ts (873 lines) - Core chat state & streaming logic
+  2. supabase/functions/pediatric-ai-chat/index.ts (609 lines) - Main AI handler
+  3. src/components/chat/AdvancedChatInterface.tsx - Chat UI
+  4. src/App.tsx - Routes & providers
+  5. src/hooks/useAuth.tsx - Authentication
+
+ENVIRONMENT SETUP:
+  VITE_SUPABASE_PROJECT_ID=pgypyipdmrhrutegapsx
+  VITE_SUPABASE_PUBLISHABLE_KEY=<JWT_KEY>
+  VITE_SUPABASE_URL=https://pgypyipdmrhrutegapsx.supabase.co
+
+  Edge Function ENV (Supabase dashboard):
+  PediaAIKey=<OPENAI_API_KEY>
+  SUPABASE_URL=<SUPABASE_URL>
+  SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY>
+
+================================================================================
+CONCLUSION
+================================================================================
+
+PediatricAI is a well-architected, production-ready pediatric decision-support
+system that leverages modern web technologies (React, TypeScript, Supabase) with
+advanced AI capabilities (OpenAI Responses API, streaming, function calling).
+
+The codebase demonstrates:
+- Strong patterns for real-time AI interaction (streaming with fallbacks)
+- Solid security practices (RLS, JWT, RBAC)
+- Medical-domain knowledge (dosage calculations, growth charts)
+- Thoughtful error handling (three-tier persistence)
+- Clean separation of concerns (frontend, backend, AI)
+
+The CLAUDE.md guide provides future Claude Code instances with enough context
+to make informed decisions and implement features quickly, without needing to
+explore the entire codebase from scratch.
+
+================================================================================
