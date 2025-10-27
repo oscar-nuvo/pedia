@@ -716,43 +716,56 @@ export const useAdvancedAIChat = (conversationId?: string) => {
   };
 
   // File upload functionality
+  // Uses Edge Function to upload to OpenAI Files API securely
   const uploadFiles = async (files: File[]): Promise<string[]> => {
     const fileIds: string[] = [];
-    
+
+    // Import uploadFileToOpenAI at runtime to avoid circular dependencies
+    const { uploadFileToOpenAI } = await import('@/utils/fileUpload');
+
+    // Get session for auth token
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    if (!token) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be signed in to upload files",
+        variant: "destructive",
+      });
+      return [];
+    }
+
+    // Get Supabase URL and anon key from environment
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !anonKey) {
+      toast({
+        title: "Configuration Error",
+        description: "Supabase environment variables not configured",
+        variant: "destructive",
+      });
+      return [];
+    }
+
     for (const file of files) {
       try {
-        // Upload to Supabase storage
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `${user?.id}/${fileName}`;
+        // Upload to OpenAI via Edge Function
+        const openaiFileId = await uploadFileToOpenAI(
+          file,
+          currentConversationId || '',
+          token,
+          supabaseUrl,
+          anonKey
+        );
 
-        const { data, error } = await supabase.storage
-          .from('documents')
-          .upload(filePath, file);
-
-        if (error) throw error;
-
-        // Store file metadata
-        const { data: fileRecord, error: dbError } = await supabase
-          .from('conversation_files')
-          .insert({
-            conversation_id: currentConversationId,
-            filename: file.name,
-            content_type: file.type,
-            size_bytes: file.size,
-            openai_file_id: data.path // Using storage path as file ID
-          })
-          .select()
-          .single();
-
-        if (dbError) throw dbError;
-
-        fileIds.push(fileRecord.openai_file_id);
+        fileIds.push(openaiFileId);
       } catch (error) {
         console.error('File upload error:', error);
         toast({
           title: "Upload Error",
-          description: `Failed to upload ${file.name}`,
+          description: `Failed to upload ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
           variant: "destructive",
         });
       }
