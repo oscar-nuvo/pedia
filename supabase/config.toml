@@ -1,5 +1,12 @@
 project_id = "pgypyipdmrhrutegapsx"
 
+[auth]
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:8080"]
+
+[auth.email]
+enable_confirmations = false
+
 [functions.generate-conversation-title]
 verify_jwt = false
 

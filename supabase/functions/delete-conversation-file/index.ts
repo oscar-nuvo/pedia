@@ -15,16 +15,28 @@ const getCorsHeaders = (origin?: string) => {
     'https://staging.pedia-app.vercel.app',
     'http://localhost:3000',
     'http://localhost:5173',
+    'http://localhost:8080',  // Vite dev server (configured port)
   ];
 
-  const corsOrigin = (origin && allowedOrigins.includes(origin))
-    ? origin
-    : allowedOrigins[0];
+  // Check if origin is allowed
+  const isAllowed = origin && allowedOrigins.includes(origin);
+
+  // Log warning for unknown origins to help debug CORS issues in new deployments
+  if (origin && !isAllowed) {
+    console.warn('CORS: Unknown origin attempted request', {
+      origin,
+      allowedOrigins,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Default to first allowed origin for CORS header (request still processes, but browser blocks response)
+  const corsOrigin = isAllowed ? origin : allowedOrigins[0];
 
   return {
     'Access-Control-Allow-Origin': corsOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, content-type',
-    'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS', // Function uses POST with JSON body
     'Access-Control-Max-Age': '86400',
   };
 };
@@ -64,8 +76,14 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // ✅ SECURITY: Authenticate user
-    const authHeader = req.headers.get('Authorization')!;
+    // SECURITY: Authenticate user - explicit null check to return proper 401 instead of 500
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing Authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
@@ -126,7 +144,7 @@ serve(async (req) => {
     const openaiFileId = fileRecord.openai_file_id;
 
     // Step 1: Delete from OpenAI Files API (optional - files can persist, but clean up is good practice)
-    let openaiDeleteResult = { success: false, skipped: false };
+    let openaiDeleteResult = { success: false, skipped: false, error: null as string | null };
 
     try {
       console.log('Deleting file from OpenAI', { openaiFileId });
@@ -142,24 +160,27 @@ serve(async (req) => {
         openaiDeleteResult.success = true;
         console.log('File deleted from OpenAI', { openaiFileId });
       } else if (openaiResponse.status === 404) {
-        // File already deleted or doesn't exist - not an error
+        // File already deleted or doesn't exist - treat as success (idempotent)
         console.warn('File not found in OpenAI (already deleted?)', { openaiFileId });
         openaiDeleteResult.skipped = true;
+        openaiDeleteResult.success = true; // Consider 404 as successful cleanup
       } else {
         const errorData = await openaiResponse.text();
+        openaiDeleteResult.error = `OpenAI API error (${openaiResponse.status}): ${errorData}`;
         console.error('OpenAI deletion error', {
           status: openaiResponse.status,
           error: errorData,
           fileId: openaiFileId,
         });
-        // Don't throw - continue to delete from database anyway
+        // Continue to delete from database - but track the failure
       }
     } catch (openaiError) {
+      openaiDeleteResult.error = openaiError instanceof Error ? openaiError.message : String(openaiError);
       console.error('Error calling OpenAI delete API', {
-        error: openaiError instanceof Error ? openaiError.message : String(openaiError),
+        error: openaiDeleteResult.error,
         fileId: openaiFileId,
       });
-      // Don't throw - continue to delete from database anyway
+      // Continue to delete from database - but track the failure
     }
 
     // Step 2: Delete from Supabase database (primary action)
@@ -190,17 +211,31 @@ serve(async (req) => {
       userId: user.id,
       openaiDeleted: openaiDeleteResult.success,
       openaiSkipped: openaiDeleteResult.skipped,
+      openaiError: openaiDeleteResult.error,
     });
+
+    // Determine response status based on partial success
+    // 200 = full success, 207 = partial success (DB deleted but OpenAI failed)
+    const isPartialSuccess = !openaiDeleteResult.success && openaiDeleteResult.error;
+    const httpStatus = isPartialSuccess ? 207 : 200;
 
     return new Response(
       JSON.stringify({
-        success: true,
+        success: true, // DB deletion succeeded
         fileId,
         deletedFromOpenAI: openaiDeleteResult.success,
         deletedFromDatabase: true,
-        message: 'File deleted successfully'
+        openaiSkipped: openaiDeleteResult.skipped,
+        // Include warning for partial success so client knows file may persist in OpenAI
+        ...(isPartialSuccess && {
+          warning: 'File removed from conversation but may still exist in OpenAI storage',
+          openaiError: openaiDeleteResult.error,
+        }),
+        message: isPartialSuccess
+          ? 'File removed from conversation (OpenAI cleanup failed - file may persist in storage)'
+          : 'File deleted successfully'
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: httpStatus }
     );
 
   } catch (error) {

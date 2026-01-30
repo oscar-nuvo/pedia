@@ -235,8 +235,9 @@ export const useAdvancedAIChat = (conversationId?: string) => {
       taskType,
       options = {} 
     }: { 
-      message: string; 
+      message: string;
       fileIds?: string[];
+      conversationId?: string | null;  // Explicit conversation ID (to avoid race conditions with file uploads)
       taskType?: 'medical_research' | 'drug_interaction' | 'diagnosis_analysis';
       options?: {
         reasoningEffort?: 'low' | 'medium' | 'high';
@@ -245,13 +246,15 @@ export const useAdvancedAIChat = (conversationId?: string) => {
       };
     }) => {
       if (!user) throw new Error('User not authenticated');
-      
-      let conversationIdToUse = currentConversationId;
-      
+
+      // Use explicit conversationId if provided (from file upload), otherwise use state
+      let conversationIdToUse = conversationId || currentConversationId;
+
       // Create conversation if none exists
       if (!conversationIdToUse) {
         const conversation = await createConversationMutation.mutateAsync('New Conversation');
         conversationIdToUse = conversation.id;
+        setCurrentConversationId(conversationIdToUse);
       }
 
       // Cancel any existing stream
@@ -292,9 +295,12 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         }
       };
 
+      // Get Supabase URL from environment or client
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pgypyipdmrhrutegapsx.supabase.co';
+
       // Handle background tasks
       if (taskType) {
-        const response = await fetch(`https://pgypyipdmrhrutegapsx.supabase.co/functions/v1/pediatric-ai-chat`, {
+        const response = await fetch(`${supabaseUrl}/functions/v1/pediatric-ai-chat`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -316,7 +322,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
       }
 
       // Regular streaming response
-      const response = await fetch(`https://pgypyipdmrhrutegapsx.supabase.co/functions/v1/pediatric-ai-chat`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/pediatric-ai-chat`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -717,52 +723,89 @@ export const useAdvancedAIChat = (conversationId?: string) => {
 
   // File upload functionality
   // Uses Edge Function to upload to OpenAI Files API securely
-  const uploadFiles = async (files: File[]): Promise<string[]> => {
+  // Returns both fileIds and the conversationId used (to avoid race conditions)
+  const uploadFiles = async (files: File[]): Promise<{ fileIds: string[]; conversationId: string | null }> => {
     const fileIds: string[] = [];
 
-    // Import uploadFileToOpenAI at runtime to avoid circular dependencies
-    const { uploadFileToOpenAI } = await import('@/utils/fileUpload');
+    // Import utilities at runtime to avoid circular dependencies
+    const { uploadFileToOpenAI, validateFile } = await import('@/utils/fileUpload');
 
     // Get session for auth token
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
 
     if (!token) {
+      const authError = new Error('You must be signed in to upload files');
       toast({
         title: "Authentication Error",
-        description: "You must be signed in to upload files",
+        description: authError.message,
         variant: "destructive",
       });
-      return [];
+      // Throw instead of returning empty - prevents message being sent without intended attachments
+      throw authError;
     }
 
-    // Get Supabase URL and anon key from environment
+    // Get Supabase URL from environment (no hardcoded fallbacks for security)
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !anonKey) {
+    if (!supabaseUrl) {
+      const configError = new Error('Supabase URL not configured');
       toast({
         title: "Configuration Error",
         description: "Supabase environment variables not configured",
         variant: "destructive",
       });
-      return [];
+      // Throw instead of returning empty - prevents message being sent without intended attachments
+      throw configError;
     }
 
+    // Create conversation if none exists (files must belong to a conversation)
+    let conversationId = currentConversationId;
+    if (!conversationId) {
+      try {
+        const conversation = await createConversationMutation.mutateAsync('New Conversation');
+        conversationId = conversation.id;
+        // Also update state for UI consistency
+        setCurrentConversationId(conversationId);
+      } catch (error) {
+        console.error('Failed to create conversation for file upload:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create conversation for file upload",
+          variant: "destructive",
+        });
+        return { fileIds: [], conversationId: null };
+      }
+    }
+
+    const failedFiles: string[] = [];
+
     for (const file of files) {
+      // Client-side validation first - fail fast to save bandwidth
+      const validation = validateFile(file);
+      if (!validation.isValid) {
+        failedFiles.push(file.name);
+        toast({
+          title: "Validation Error",
+          description: `${file.name}: ${validation.error}`,
+          variant: "destructive",
+        });
+        continue; // Skip invalid files
+      }
+
       try {
         // Upload to OpenAI via Edge Function
         const openaiFileId = await uploadFileToOpenAI(
           file,
-          currentConversationId || '',
+          conversationId,
           token,
-          supabaseUrl,
-          anonKey
+          supabaseUrl
         );
 
         fileIds.push(openaiFileId);
       } catch (error) {
         console.error('File upload error:', error);
+        failedFiles.push(file.name);
         toast({
           title: "Upload Error",
           description: `Failed to upload ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -771,7 +814,27 @@ export const useAdvancedAIChat = (conversationId?: string) => {
       }
     }
 
-    return fileIds;
+    // Show explicit warning if some files failed but others succeeded
+    if (failedFiles.length > 0 && fileIds.length > 0) {
+      toast({
+        title: "Partial Upload",
+        description: `${fileIds.length} of ${files.length} files uploaded. Failed: ${failedFiles.join(', ')}. Your message will only include the successfully uploaded files.`,
+        variant: "destructive",
+      });
+    }
+
+    // If ALL files failed, return empty to prevent sending message without attachments
+    if (failedFiles.length === files.length) {
+      toast({
+        title: "All Uploads Failed",
+        description: "No files were uploaded. Please try again or send your message without attachments.",
+        variant: "destructive",
+      });
+      return { fileIds: [], conversationId };
+    }
+
+    // Return both fileIds and conversationId to avoid race conditions
+    return { fileIds, conversationId };
   };
 
   // Utility functions

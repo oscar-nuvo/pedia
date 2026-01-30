@@ -2,39 +2,100 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+/**
+ * Get CORS headers with restricted origin
+ * Restricts requests to your own domain to prevent abuse
+ */
+const getCorsHeaders = (origin?: string) => {
+  const allowedOrigins = [
+    'https://pedia-app.vercel.app',
+    'https://staging.pedia-app.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:8080',
+  ];
+
+  const corsOrigin = (origin && allowedOrigins.includes(origin))
+    ? origin
+    : allowedOrigins[0];
+
+  return {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+  };
 };
 
 serve(async (req) => {
+  // Get origin for CORS
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin || undefined);
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
     const { message, conversationId, fileIds = [], patientContext, taskType, options = {} } = await req.json();
-    
+
     const openaiApiKey = Deno.env.get('PediaAIKey');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
+
     if (!openaiApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Authenticate user
-    const authHeader = req.headers.get('Authorization')!;
+    // ✅ SECURITY: Check auth header exists before using
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
+
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ✅ SECURITY: Verify conversation belongs to user before saving messages
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .select('id, user_id, metadata')
+      .eq('id', conversationId)
+      .single();
+
+    if (convError || !conversation) {
+      return new Response(
+        JSON.stringify({ error: 'Conversation not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (conversation.user_id !== user.id) {
+      console.error('Unauthorized conversation access attempt', {
+        userId: user.id,
+        conversationOwnerId: conversation.user_id,
+        conversationId,
+      });
+      return new Response(
+        JSON.stringify({ error: 'Not authorized to access this conversation' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`Processing message for user: ${user.id}`);
+    console.log(`Received fileIds: ${JSON.stringify(fileIds)}`);
 
     // Handle background tasks
     if (taskType && ['medical_research', 'drug_interaction', 'diagnosis_analysis'].includes(taskType)) {
@@ -85,13 +146,46 @@ serve(async (req) => {
       }).catch(error => console.error('Title generation failed:', error));
     }
 
-    // Build conversation context
+    // Build conversation context - exclude the just-saved message so we can add it with files
     const { data: recentMessages } = await supabase
       .from('messages')
       .select('role, content, created_at')
       .eq('conversation_id', conversationId)
+      .neq('id', userMessage.id)  // Exclude the current message - we'll add it with files
       .order('created_at', { ascending: true })
       .limit(20);
+
+    // Get file metadata for content type detection
+    let fileMetadata: { openai_file_id: string; content_type: string }[] = [];
+    if (fileIds.length > 0) {
+      const { data: files, error: filesError } = await supabase
+        .from('conversation_files')
+        .select('openai_file_id, content_type')
+        .in('openai_file_id', fileIds);
+
+      if (filesError) {
+        console.error(`Failed to fetch file metadata: ${JSON.stringify(filesError)}`);
+      }
+
+      fileMetadata = files || [];
+      console.log(`File metadata query: fileIds=${JSON.stringify(fileIds)}, found=${fileMetadata.length}`);
+
+      // Warn if some files don't have metadata (could indicate upload DB error)
+      const missingFiles = fileIds.filter(id => !fileMetadata.find(f => f.openai_file_id === id));
+      if (missingFiles.length > 0) {
+        console.warn(`Missing metadata for files: ${JSON.stringify(missingFiles)}. These will be treated as documents.`);
+      }
+    }
+
+    // Helper to check if a file is an image based on content_type
+    const isImageFile = (fileId: string): boolean => {
+      const file = fileMetadata.find(f => f.openai_file_id === fileId);
+      if (!file) {
+        console.warn(`No metadata found for file ${fileId}, treating as document`);
+        return false;
+      }
+      return file.content_type?.startsWith('image/') || false;
+    };
 
     // Build input messages for prompt library with content parts format
     const buildConversationInput = (recentMessages: any[], message: string, patientContext: any, fileIds: string[]) => {
@@ -132,19 +226,23 @@ serve(async (req) => {
           }
         ];
 
-        // Add document content blocks for each file
+        // Add file content blocks with correct type based on content type
+        // Images use "input_image", documents use "input_file"
         if (fileIds.length > 0) {
           for (const fileId of fileIds) {
-            userMessageContent.push({
-              type: "document",
-              document: {
-                type: "text",
-                source: {
-                  type: "file",
-                  file_id: fileId
-                }
-              }
-            });
+            if (isImageFile(fileId)) {
+              // Image format per OpenAI Responses API docs
+              userMessageContent.push({
+                type: "input_image",
+                file_id: fileId
+              });
+            } else {
+              // Document/file format per OpenAI Responses API docs
+              userMessageContent.push({
+                type: "input_file",
+                file_id: fileId
+              });
+            }
           }
         }
 
@@ -192,14 +290,14 @@ serve(async (req) => {
       }
     ];
 
-    // Get previous response ID for conversation continuity
-    const { data: conversation } = await supabase
-      .from('conversations')
-      .select('metadata')
-      .eq('id', conversationId)
-      .single();
-
+    // Get previous response ID for conversation continuity (using already-fetched conversation)
     const previousResponseId = conversation?.metadata?.responseId;
+
+    // Build the input for OpenAI
+    const openaiInput = buildConversationInput(recentMessages || [], message, patientContext, fileIds);
+
+    // Log the request for debugging
+    console.log(`OpenAI request input: ${JSON.stringify(openaiInput, null, 2)}`);
 
     // Create OpenAI Responses API request with prompt library
     const response = await fetch('https://api.openai.com/v1/responses', {
@@ -209,10 +307,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        model: 'gpt-5',
         prompt: {
           id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f"
         },
-        input: buildConversationInput(recentMessages || [], message, patientContext, fileIds),
+        input: openaiInput,
         tools,
         stream: true,
         store: true,

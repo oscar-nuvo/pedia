@@ -181,7 +181,7 @@ export const FileUploadPanel: React.FC<FileUploadPanelProps> = ({
         multiple
         onChange={handleFileInputChange}
         disabled={disabled || isUploading}
-        accept=".pdf,.doc,.docx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp"
+        accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
         className="hidden"
         aria-label="Upload files"
       />

@@ -1,4 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { validateFile } from "@/utils/fileUpload";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -46,6 +48,7 @@ const AdvancedChatInterface = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showContextPanel, setShowContextPanel] = useState(false);
+  const { toast } = useToast();
 
   const {
     conversations,
@@ -78,19 +81,23 @@ const AdvancedChatInterface = () => {
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isSendingMessage) return;
-    
+
     const message = inputMessage.trim();
     setInputMessage("");
-    
-    // Upload files if any
+
+    // Upload files if any - get both fileIds AND conversationId to avoid race conditions
     let fileIds: string[] = [];
+    let uploadConversationId: string | null = null;
     if (selectedFiles.length > 0) {
-      fileIds = await uploadFiles(selectedFiles);
+      const uploadResult = await uploadFiles(selectedFiles);
+      fileIds = uploadResult.fileIds;
+      uploadConversationId = uploadResult.conversationId;
       setSelectedFiles([]);
     }
-    
+
     try {
-      await sendMessage({ message, fileIds });
+      // Pass the conversationId from upload to ensure files and message use the same conversation
+      await sendMessage({ message, fileIds, conversationId: uploadConversationId });
     } catch (error) {
       console.error("Error sending message:", error);
     }
@@ -103,10 +110,35 @@ const AdvancedChatInterface = () => {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setSelectedFiles(prev => [...prev, ...files]);
-  };
+    const validFiles: File[] = [];
+    const rejectedFiles: string[] = [];
+
+    for (const file of files) {
+      const validation = validateFile(file);
+      if (validation.isValid) {
+        validFiles.push(file);
+      } else {
+        rejectedFiles.push(`${file.name}: ${validation.error}`);
+      }
+    }
+
+    if (rejectedFiles.length > 0) {
+      toast({
+        title: "Some files were rejected",
+        description: rejectedFiles.join('\n'),
+        variant: "destructive",
+      });
+    }
+
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+    }
+
+    // Reset input to allow re-selecting the same file
+    e.target.value = '';
+  }, [toast]);
 
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
@@ -384,7 +416,7 @@ const AdvancedChatInterface = () => {
                       ref={fileInputRef}
                       type="file"
                       multiple
-                      accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                      accept=".pdf,.jpg,.jpeg,.png,.gif,.webp"
                       onChange={handleFileSelect}
                       className="hidden"
                     />

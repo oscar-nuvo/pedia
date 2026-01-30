@@ -22,19 +22,18 @@ export interface UploadProgress {
 
 // Constants
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+// OpenAI supported file types:
+// - Images (input_image): JPEG, PNG, GIF, WebP
+// - Documents (input_file): PDF only (Word, TXT, CSV not supported)
 const ALLOWED_FILE_TYPES = [
   'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain',
-  'text/csv',
   'image/jpeg',
   'image/png',
   'image/gif',
   'image/webp'
 ];
 
-const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt', '.csv', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
+const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000; // 1 second initial delay, exponential backoff
@@ -61,7 +60,7 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
     if (!extension || !ALLOWED_EXTENSIONS.includes(`.${extension}`)) {
       return {
         isValid: false,
-        error: 'File type not supported. Supported types: PDF, Word, Text, CSV, Images (JPEG, PNG, GIF, WebP)'
+        error: 'File type not supported. Supported types: PDF, Images (JPEG, PNG, GIF, WebP)'
       };
     }
   }
@@ -102,7 +101,6 @@ export const validateFiles = (files: File[]): {
  * @param conversationId - ID of the conversation
  * @param authToken - Authentication token for the API call
  * @param supabaseUrl - Supabase project URL
- * @param anonKey - Supabase anonymous key (from environment)
  * @param onProgress - Callback for progress updates
  * @returns Promise with file ID from OpenAI
  */
@@ -111,7 +109,6 @@ export const uploadFileToOpenAI = async (
   conversationId: string,
   authToken: string,
   supabaseUrl: string,
-  anonKey: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<string> => {
   // Use crypto.randomUUID() for better uniqueness
@@ -153,8 +150,14 @@ export const uploadFileToOpenAI = async (
 
       clearTimeout(timeoutId);
 
-      // Handle response
-      const data = await response.json();
+      // Handle response - wrap JSON parsing to handle non-JSON responses (e.g., HTML error pages)
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        // Server returned non-JSON (HTML error page, gateway timeout, etc.)
+        throw new Error(`Server returned invalid response (HTTP ${response.status}). Please try again.`);
+      }
 
       if (!response.ok) {
         const errorMsg = data.error || `Upload failed with status ${response.status}`;
@@ -223,16 +226,14 @@ export const uploadFileToOpenAI = async (
  * @param conversationId - ID of the conversation
  * @param authToken - Authentication token for the API call
  * @param supabaseUrl - Supabase project URL
- * @param anonKey - Supabase anonymous key (from environment)
  * @param onProgress - Callback for progress updates
- * @returns Promise with array of file IDs from OpenAI
+ * @returns Promise with array of file IDs from OpenAI. Note: Throws on first failure - partial results are not returned.
  */
 export const uploadFilesToOpenAI = async (
   files: File[],
   conversationId: string,
   authToken: string,
   supabaseUrl: string,
-  anonKey: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<string[]> => {
   const uploadedFileIds: string[] = [];
@@ -244,7 +245,6 @@ export const uploadFilesToOpenAI = async (
         conversationId,
         authToken,
         supabaseUrl,
-        anonKey,
         onProgress
       );
       uploadedFileIds.push(fileId);

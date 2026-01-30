@@ -13,12 +13,23 @@ const getCorsHeaders = (origin?: string) => {
     'https://staging.pedia-app.vercel.app', // Staging
     'http://localhost:3000',  // Local dev
     'http://localhost:5173',  // Vite dev server
+    'http://localhost:8080',  // Vite dev server (configured port)
   ];
 
-  // Check if origin is allowed, default to first allowed origin
-  const corsOrigin = (origin && allowedOrigins.includes(origin))
-    ? origin
-    : allowedOrigins[0];
+  // Check if origin is allowed
+  const isAllowed = origin && allowedOrigins.includes(origin);
+
+  // Log warning for unknown origins to help debug CORS issues in new deployments
+  if (origin && !isAllowed) {
+    console.warn('CORS: Unknown origin attempted request', {
+      origin,
+      allowedOrigins,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Default to first allowed origin for CORS header (request still processes, but browser blocks response)
+  const corsOrigin = isAllowed ? origin : allowedOrigins[0];
 
   return {
     'Access-Control-Allow-Origin': corsOrigin,
@@ -87,8 +98,14 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Authenticate user
-    const authHeader = req.headers.get('Authorization')!;
+    // Authenticate user - explicit null check to return proper 401 instead of 500
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing Authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
@@ -142,12 +159,11 @@ serve(async (req) => {
     }
 
     // Validate file type (whitelist approach - more secure)
+    // OpenAI supported types:
+    // - Images (input_image): JPEG, PNG, GIF, WebP
+    // - Documents (input_file): PDF only
     const ALLOWED_TYPES = [
       'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain',
-      'text/csv',
       'image/jpeg',
       'image/png',
       'image/gif',
@@ -158,7 +174,7 @@ serve(async (req) => {
       console.warn(`File type validation failed: ${file.name} (${file.type})`);
       return new Response(
         JSON.stringify({
-          error: `File type not supported. Allowed types: PDF, Word, Text, CSV, Images (JPEG, PNG, GIF, WebP)`
+          error: `File type not supported. Allowed types: PDF, Images (JPEG, PNG, GIF, WebP)`
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -179,9 +195,13 @@ serve(async (req) => {
     const buffer = await file.arrayBuffer();
 
     // Create FormData for OpenAI Files API
+    // Use 'vision' purpose for images, 'assistants' for documents
+    const isImage = file.type.startsWith('image/');
+    const purpose = isImage ? 'vision' : 'assistants';
+
     const openaiFormData = new FormData();
     openaiFormData.append('file', new Blob([buffer], { type: file.type }), file.name);
-    openaiFormData.append('purpose', 'assistants');
+    openaiFormData.append('purpose', purpose);
 
     // Log with structured format for better debugging
     console.log('Upload to OpenAI started', {
@@ -261,8 +281,18 @@ serve(async (req) => {
         error: dbError.message,
         userId: user.id,
       });
-      // Even if DB fails, we still want to return the file ID since it's uploaded to OpenAI
-      // The file ID can be recovered later
+      // CRITICAL: If DB fails, the chat function won't know the file's content type
+      // This would cause images to be sent as documents, breaking the OpenAI API call
+      // Fail the upload to ensure data consistency
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to save file metadata. Please try again.',
+          details: dbError.message,
+          // Include the OpenAI file ID in case manual recovery is needed
+          openai_file_id: fileId
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const response: UploadResponse = {

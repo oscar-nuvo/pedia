@@ -53,7 +53,20 @@ export const deleteConversationFile = async (
         }
       );
 
-      const data = await response.json();
+      // Handle response - wrap JSON parsing to handle non-JSON responses (e.g., HTML error pages)
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        // Server returned non-JSON (HTML error page, gateway timeout, etc.)
+        return {
+          success: false,
+          fileId,
+          deletedFromOpenAI: false,
+          deletedFromDatabase: false,
+          error: `Server returned invalid response (HTTP ${response.status}). Please try again.`,
+        };
+      }
 
       if (!response.ok) {
         console.error('File deletion failed', {
