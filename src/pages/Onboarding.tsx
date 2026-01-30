@@ -45,7 +45,7 @@ export default function Onboarding() {
         .single();
 
       if (profile?.onboarding_completed) {
-        navigate('/overview');
+        navigate('/ai-copilot');
       }
     };
 
@@ -157,7 +157,7 @@ export default function Onboarding() {
         description: "Your account is now set up successfully.",
       });
 
-      navigate('/overview');
+      navigate('/ai-copilot');
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({

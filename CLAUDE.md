@@ -350,14 +350,12 @@ Uses `response_id` field for idempotency to prevent duplicates.
 |-------|-----------|------|
 | `/` | Index (landing) | Public |
 | `/auth` | Auth (sign in/up) | Public |
+| `/onboarding` | Onboarding | Public (pre-auth) |
 | `/ai-copilot` | AdvancedChatInterface | Protected |
-| `/overview` | Overview dashboard | Protected |
-| `/scheduling` | Scheduling | Protected |
-| `/documentation` | Documentation | Protected |
-| `/analytics` | Analytics | Protected |
-| `/admin-agents` | AdminAgents | Protected |
 
 Protected routes use `ProtectedRoute` component which redirects to `/auth` if no session.
+
+After successful login/onboarding, users are redirected to `/ai-copilot`.
 
 ---
 

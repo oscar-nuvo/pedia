@@ -26,9 +26,9 @@ export default function Auth() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated - send to onboarding which will check completion status
   if (user) {
-    return <Navigate to="/ai-copilot" replace />;
+    return <Navigate to="/onboarding" replace />;
   }
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
