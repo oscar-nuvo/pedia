@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,11 @@ export default function Auth() {
   const { user, signUp, signIn } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  // Get email from query params (from demo redirect)
+  const prefillEmail = searchParams.get('email') || '';
+  const defaultTab = prefillEmail ? 'signup' : 'signin';
 
   // Redirect if already authenticated - send to onboarding which will check completion status
   if (user) {
@@ -124,13 +129,15 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-bg-primary px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">PediatricAI</CardTitle>
+          <CardTitle className="text-2xl font-bold">REZZY</CardTitle>
           <CardDescription>
-            Sign in to your account or create a new one
+            {prefillEmail
+              ? "Create your account for unlimited access"
+              : "Sign in to your account or create a new one"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -193,6 +200,7 @@ export default function Auth() {
                     name="email"
                     type="email"
                     placeholder="john@example.com"
+                    defaultValue={prefillEmail}
                     required
                   />
                 </div>

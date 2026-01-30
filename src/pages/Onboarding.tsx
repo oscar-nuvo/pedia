@@ -153,7 +153,7 @@ export default function Onboarding() {
       if (roleError) throw roleError;
 
       toast({
-        title: "Welcome to PediatricAI!",
+        title: "Welcome to Rezzy!",
         description: "Your account is now set up successfully.",
       });
 
@@ -181,7 +181,7 @@ export default function Onboarding() {
     <div className="min-h-screen flex items-center justify-center bg-bg-primary px-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome to PediatricAI</CardTitle>
+          <CardTitle className="text-2xl font-bold">Welcome to Rezzy</CardTitle>
           <CardDescription>
             Step {step} of 2: {step === 1 ? 'Set up your practice' : 'Complete your profile'}
           </CardDescription>

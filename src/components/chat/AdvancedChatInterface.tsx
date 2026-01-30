@@ -251,7 +251,7 @@ const AdvancedChatInterface = () => {
               <SidebarTrigger />
               <div className="flex items-center gap-2">
                 <Bot className="w-5 h-5 text-primary" />
-                <h1 className="font-semibold">Pediatric AI Assistant</h1>
+                <h1 className="font-semibold">Rezzy</h1>
               </div>
               
               {/* Patient Context Indicator */}
@@ -467,7 +467,7 @@ const WelcomeSection = ({ onQuickAction }: { onQuickAction: (action: string, inp
   <div className="px-4 py-12 text-center">
     <Bot className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
     <h2 className="text-xl font-semibold mb-2">
-      Welcome to your Advanced Pediatric AI Assistant
+      Welcome to Rezzy
     </h2>
     <p className="text-muted-foreground mb-8 max-w-md mx-auto">
       I can help with clinical questions, drug dosing, guidelines, patient-specific insights, 

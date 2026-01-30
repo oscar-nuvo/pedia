@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**PediatricAI** is an AI-powered medical decision support copilot for pediatric healthcare professionals. It combines a React frontend with Supabase Edge Functions and OpenAI's Responses API for streaming AI chat.
+**Rezzy** is an AI-powered medical decision support copilot for pediatric healthcare professionals. It combines a React frontend with Supabase Edge Functions and OpenAI's Responses API for streaming AI chat.
 
 - **Frontend**: React 18 + TypeScript + Vite + shadcn/ui + Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Edge Functions, Auth)
@@ -171,6 +171,7 @@ supabase functions deploy pediatric-ai-chat
 supabase functions deploy generate-conversation-title
 supabase functions deploy upload-file-to-openai
 supabase functions deploy delete-conversation-file
+supabase functions deploy demo-chat
 ```
 
 ### Deployment Checklist
@@ -199,6 +200,7 @@ Files to update:
 - `supabase/functions/pediatric-ai-chat/index.ts`
 - `supabase/functions/upload-file-to-openai/index.ts`
 - `supabase/functions/delete-conversation-file/index.ts`
+- `supabase/functions/demo-chat/index.ts`
 
 ---
 
@@ -269,6 +271,9 @@ Chat Edge Function includes file in OpenAI request:
 | `supabase/functions/upload-file-to-openai/index.ts` | File upload to OpenAI Files API |
 | `supabase/functions/delete-conversation-file/index.ts` | Delete files from OpenAI + DB |
 | `supabase/functions/generate-conversation-title/index.ts` | Auto-generates titles for new conversations |
+| `supabase/functions/demo-chat/index.ts` | Landing page demo: email capture, query limits, OpenAI streaming |
+| `src/components/landing/InteractiveDemo.tsx` | Interactive demo terminal component on landing page |
+| `src/utils/demoValidation.ts` | Validation utilities for demo chat (injection detection, email validation) |
 
 ### State Management
 
@@ -285,6 +290,7 @@ Core tables with RLS policies:
 - `conversation_files` - openai_file_id, filename, content_type, linked to conversations
 - `profiles` - user metadata, created via trigger on auth.users
 - `user_roles` - RBAC with roles: super_admin, admin, doctor, nurse, receptionist
+- `demo_leads` - landing page demo email capture with query tracking (service role only, no public access)
 
 ### Edge Functions
 
@@ -294,6 +300,7 @@ Core tables with RLS policies:
 | `generate-conversation-title` | No | Called internally for title generation |
 | `upload-file-to-openai` | Required | File upload to OpenAI Files API |
 | `delete-conversation-file` | Required | Delete files from OpenAI + DB |
+| `demo-chat` | No | Landing page demo chat with email capture and query limits |
 
 ### Function Calling (Tools)
 
