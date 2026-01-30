@@ -8,11 +8,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
  */
 const getCorsHeaders = (origin?: string) => {
   const allowedOrigins = [
-    'https://pedia-app.vercel.app',
-    'https://staging.pedia-app.vercel.app',
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:8080',
+    'https://pedia.lovable.app',  // Production (Lovable)
+    'https://pedia-app.vercel.app',  // Production (Vercel)
+    'https://staging.pedia-app.vercel.app', // Staging
+    'http://localhost:3000',  // Local dev
+    'http://localhost:5173',  // Vite dev server
+    'http://localhost:8080',  // Vite dev server (configured port)
   ];
 
   const corsOrigin = (origin && allowedOrigins.includes(origin))
