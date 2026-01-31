@@ -4,6 +4,7 @@ import { validateFile } from "@/utils/fileUpload";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import RezzyLogo from "@/components/RezzyLogo";
 import {
   Send,
   StopCircle,
@@ -121,8 +122,8 @@ const AdvancedChatInterface = () => {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center space-y-3">
-          <div className="w-10 h-10 bg-rezzy-sage rounded-xl mx-auto flex items-center justify-center">
-            <div className="w-4 h-4 bg-white rounded-lg" />
+          <div className="mx-auto flex justify-center">
+            <RezzyLogo size={48} />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-rezzy-ink">Please log in</h2>
@@ -218,9 +219,7 @@ const AdvancedChatInterface = () => {
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-rezzy-sage rounded-lg flex items-center justify-center">
-              <div className="w-3 h-3 bg-white rounded" />
-            </div>
+            <RezzyLogo size={28} />
             <span className="font-display font-semibold text-rezzy-ink">Rezzy</span>
           </div>
 
@@ -256,8 +255,8 @@ const AdvancedChatInterface = () => {
             {/* Welcome State */}
             {messages.length === 0 && !streamingState.streamingMessage && (
               <div className="px-4 py-16 text-center">
-                <div className="w-12 h-12 bg-rezzy-sage rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                  <div className="w-5 h-5 bg-white rounded-lg" />
+                <div className="mx-auto mb-6 flex justify-center">
+                  <RezzyLogo size={56} />
                 </div>
                 <h2 className="text-xl font-display font-semibold text-rezzy-ink mb-2">
                   How can I help?
@@ -281,8 +280,8 @@ const AdvancedChatInterface = () => {
             {streamingState.streamingMessage && (
               <div className="px-4 py-6">
                 <div className="flex gap-3">
-                  <div className="w-7 h-7 bg-rezzy-sage rounded-lg flex-shrink-0 flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded animate-pulse" />
+                  <div className="w-7 h-7 flex-shrink-0">
+                    <RezzyLogo size={28} />
                   </div>
                   <div className="flex-1 min-w-0">
                     {/* Reasoning */}
@@ -415,11 +414,15 @@ const MessageBubble = ({
     <div className="px-4 py-6">
       <div className="flex gap-3">
         {/* Avatar */}
-        <div className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center ${
-          isUser ? 'bg-rezzy-ink text-white text-xs font-medium' : 'bg-rezzy-sage'
-        }`}>
-          {isUser ? 'Y' : <div className="w-3 h-3 bg-white rounded" />}
-        </div>
+        {isUser ? (
+          <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center bg-rezzy-ink text-white text-xs font-medium">
+            Y
+          </div>
+        ) : (
+          <div className="w-7 h-7 flex-shrink-0">
+            <RezzyLogo size={28} />
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           {/* Message content */}

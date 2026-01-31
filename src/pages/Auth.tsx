@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import RezzyLogo from '@/components/RezzyLogo';
 
 const signUpSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50, 'First name too long'),
@@ -138,10 +139,7 @@ export default function Auth() {
       <div className="w-full max-w-md mx-auto">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="relative w-10 h-10">
-            <div className="absolute inset-0 bg-rezzy-sage rounded-xl" />
-            <div className="absolute top-1.5 left-1.5 w-4 h-4 bg-rezzy-cream rounded-lg" />
-          </div>
+          <RezzyLogo size={40} />
           <span className="text-rezzy-ink font-display font-semibold text-2xl tracking-tight">
             Rezzy
           </span>

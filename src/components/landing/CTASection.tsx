@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
+import RezzyLogo from "../RezzyLogo";
 
 const CTASection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -99,11 +100,8 @@ const CTASection = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 mt-32">
         <div className="border-t border-rezzy-cream-deep pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="relative w-6 h-6">
-              <div className="absolute inset-0 bg-rezzy-sage rounded-sm" />
-              <div className="absolute top-0.5 left-0.5 w-2 h-2 bg-rezzy-cream rounded-sm" />
-            </div>
+          <div className="flex items-center gap-2">
+            <RezzyLogo size={24} />
             <span className="text-rezzy-ink font-semibold text-sm">REZZY</span>
           </div>
 

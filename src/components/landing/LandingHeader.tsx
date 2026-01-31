@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import RezzyLogo from "../RezzyLogo";
 
 const LandingHeader = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -27,11 +28,7 @@ const LandingHeader = () => {
             to="/"
             className="group flex items-center gap-3"
           >
-            {/* Logo mark - a simple but distinctive shape */}
-            <div className="relative w-8 h-8">
-              <div className="absolute inset-0 bg-rezzy-sage" />
-              <div className="absolute top-1 left-1 w-3 h-3 bg-rezzy-cream" />
-            </div>
+            <RezzyLogo size={32} />
             <span className="text-rezzy-ink font-semibold text-xl tracking-tight group-hover:text-rezzy-sage transition-colors duration-300">
               Rezzy
             </span>
