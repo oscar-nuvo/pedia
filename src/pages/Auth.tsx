@@ -4,8 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 
@@ -29,7 +27,17 @@ export default function Auth() {
 
   // Get email from query params (from demo redirect)
   const prefillEmail = searchParams.get('email') || '';
-  const defaultTab = prefillEmail ? 'signup' : 'signin';
+
+  // Default to signup if email is prefilled (coming from demo)
+  const [isSignUp, setIsSignUp] = useState(!!prefillEmail);
+
+  // Update form state when URL changes (handle browser back/forward)
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setIsSignUp(true);
+    }
+  }, [searchParams]);
 
   // Redirect if already authenticated - send to onboarding which will check completion status
   if (user) {
@@ -50,7 +58,7 @@ export default function Auth() {
 
     try {
       const validation = signUpSchema.parse(data);
-      
+
       const { error } = await signUp(validation.email, validation.password, {
         first_name: validation.firstName,
         last_name: validation.lastName,
@@ -95,7 +103,7 @@ export default function Auth() {
 
     try {
       const validation = signInSchema.parse(data);
-      
+
       const { error } = await signIn(validation.email, validation.password);
 
       if (error) {
@@ -126,102 +134,193 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-primary px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">REZZY</CardTitle>
-          <CardDescription>
-            {prefillEmail
-              ? "Create your account for unlimited access"
-              : "Sign in to your account or create a new one"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue={defaultTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    name="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      placeholder="John"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      name="lastName"
-                      placeholder="Doe"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    name="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    defaultValue={prefillEmail}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    name="password"
-                    type="password"
-                    placeholder="Minimum 8 characters"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating account..." : "Create Account"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-rezzy-black px-4 pt-12 pb-8 md:pt-16">
+      <div className="w-full max-w-md mx-auto">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <div className="relative w-8 h-8">
+            <div className="absolute inset-0 bg-rezzy-green" />
+            <div className="absolute top-1 left-1 w-3 h-3 bg-rezzy-black" />
+          </div>
+          <span className="text-rezzy-white font-semibold text-2xl tracking-tight">
+            REZZY
+          </span>
+        </div>
+
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-rezzy-white mb-2">
+            {isSignUp ? 'Unlock unlimited access' : 'Welcome back'}
+          </h1>
+          {prefillEmail && isSignUp && (
+            <p className="text-rezzy-gray-light text-sm">
+              You asked 3 questions. Keep going.
+            </p>
+          )}
+          {!prefillEmail && !isSignUp && (
+            <p className="text-rezzy-gray-light text-sm">
+              Sign in to your account
+            </p>
+          )}
+        </div>
+
+        {/* Form */}
+        {isSignUp ? (
+          <form onSubmit={handleSignUp} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-rezzy-gray-light text-sm">
+                  First Name
+                </Label>
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  placeholder="John"
+                  required
+                  className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
+                           placeholder:text-rezzy-gray-dark focus:border-rezzy-green
+                           focus:ring-rezzy-green/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-rezzy-gray-light text-sm">
+                  Last Name
+                </Label>
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  placeholder="Doe"
+                  required
+                  className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
+                           placeholder:text-rezzy-gray-dark focus:border-rezzy-green
+                           focus:ring-rezzy-green/20"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="signup-email" className="text-rezzy-gray-light text-sm">
+                Email
+              </Label>
+              <Input
+                id="signup-email"
+                name="email"
+                type="email"
+                placeholder="john@example.com"
+                defaultValue={prefillEmail}
+                required
+                className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
+                         placeholder:text-rezzy-gray-dark focus:border-rezzy-green
+                         focus:ring-rezzy-green/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="signup-password" className="text-rezzy-gray-light text-sm">
+                Password
+              </Label>
+              <Input
+                id="signup-password"
+                name="password"
+                type="password"
+                placeholder="Minimum 8 characters"
+                required
+                className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
+                         placeholder:text-rezzy-gray-dark focus:border-rezzy-green
+                         focus:ring-rezzy-green/20"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-rezzy-green text-rezzy-black font-semibold
+                       hover:bg-rezzy-green/90 h-11 mt-2"
+              disabled={loading}
+            >
+              {loading ? "Creating account..." : "Create Account"}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="signin-email" className="text-rezzy-gray-light text-sm">
+                Email
+              </Label>
+              <Input
+                id="signin-email"
+                name="email"
+                type="email"
+                placeholder="Enter your email"
+                required
+                className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
+                         placeholder:text-rezzy-gray-dark focus:border-rezzy-green
+                         focus:ring-rezzy-green/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="signin-password" className="text-rezzy-gray-light text-sm">
+                Password
+              </Label>
+              <Input
+                id="signin-password"
+                name="password"
+                type="password"
+                placeholder="Enter your password"
+                required
+                className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
+                         placeholder:text-rezzy-gray-dark focus:border-rezzy-green
+                         focus:ring-rezzy-green/20"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-rezzy-green text-rezzy-black font-semibold
+                       hover:bg-rezzy-green/90 h-11 mt-2"
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
+        )}
+
+        {/* Toggle link */}
+        <div className="text-center mt-6">
+          {isSignUp ? (
+            <p className="text-rezzy-gray-light text-sm">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => setIsSignUp(false)}
+                className="text-rezzy-green hover:text-rezzy-green/80 font-medium
+                         transition-colors focus:outline-none focus:underline"
+              >
+                Sign in
+              </button>
+            </p>
+          ) : (
+            <p className="text-rezzy-gray-light text-sm">
+              Need an account?{' '}
+              <button
+                type="button"
+                onClick={() => setIsSignUp(true)}
+                className="text-rezzy-green hover:text-rezzy-green/80 font-medium
+                         transition-colors focus:outline-none focus:underline"
+              >
+                Sign up
+              </button>
+            </p>
+          )}
+        </div>
+
+        {/* Trust badges */}
+        <div className="flex items-center justify-center gap-6 mt-8 text-rezzy-gray text-xs">
+          <span className="flex items-center gap-1.5">
+            <span className="text-rezzy-green">✓</span>
+            No credit card
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-rezzy-green">✓</span>
+            Cancel anytime
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

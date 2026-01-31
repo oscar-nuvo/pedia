@@ -57,7 +57,7 @@ const LandingHeader = () => {
           <div className="flex items-center gap-4">
             <Link
               to="/auth"
-              className="text-rezzy-gray-light hover:text-rezzy-white text-sm font-medium transition-colors duration-300"
+              className="hidden md:inline text-rezzy-gray-light hover:text-rezzy-white text-sm font-medium transition-colors duration-300"
             >
               Log in
             </Link>

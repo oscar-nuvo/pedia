@@ -1,30 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-
-// Demo states
-type DemoState =
-  | "idle"           // Waiting for question
-  | "awaiting_email" // Question submitted, asking for email
-  | "validating"     // Validating email
-  | "thinking"       // Waiting for AI to start responding
-  | "streaming"      // AI response streaming
-  | "complete"       // Response done
-  | "exhausted";     // 3 queries used
-
-// Thinking phrases that rotate (Claude Code style)
-const THINKING_PHRASES = [
-  "Consulting references",
-  "Analyzing question",
-  "Searching guidelines",
-  "Gathering evidence",
-  "Cross-referencing sources",
-  "Formulating response",
-];
-
-interface Message {
-  type: "system" | "user" | "assistant" | "error";
-  content: string;
-}
+import { useIsMobile } from "@/hooks/use-mobile";
+import { DemoState, Message, DemoVariant } from "@/types/demo";
+import {
+  ChatMessage,
+  ChatInput,
+  ThinkingIndicator,
+  TerminalChrome,
+  THINKING_PHRASES,
+} from "./demo";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -35,12 +19,16 @@ if (!SUPABASE_URL) {
 
 const InteractiveDemo = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const variant: DemoVariant = isMobile ? "chat" : "terminal";
+
+  // Core state
   const [state, setState] = useState<DemoState>("idle");
   const [input, setInput] = useState("");
   const [question, setQuestion] = useState("");
   const [email, setEmail] = useState("");
   const [messages, setMessages] = useState<Message[]>([
-    { type: "system", content: "Welcome to Rezzy.\nAsk any clinical question to get started." }
+    { type: "system", content: "Welcome to Rezzy.\nAsk any clinical question to get started." },
   ]);
   const [streamingContent, setStreamingContent] = useState("");
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -49,28 +37,30 @@ const InteractiveDemo = () => {
   const [thinkingPhrase, setThinkingPhrase] = useState(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const terminalRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  // Blinking cursor
+  // Blinking cursor (terminal only)
   useEffect(() => {
-    const interval = setInterval(() => setCursorVisible(v => !v), 530);
-    return () => clearInterval(interval);
-  }, []);
+    if (variant === "terminal") {
+      const interval = setInterval(() => setCursorVisible((v) => !v), 530);
+      return () => clearInterval(interval);
+    }
+  }, [variant]);
 
-  // Rotate thinking phrases
+  // Rotate thinking phrases (terminal only)
   useEffect(() => {
-    if (state === "thinking") {
+    if (state === "thinking" && variant === "terminal") {
       const interval = setInterval(() => {
-        setThinkingPhrase(p => (p + 1) % THINKING_PHRASES.length);
+        setThinkingPhrase((p) => (p + 1) % THINKING_PHRASES.length);
       }, 1500);
       return () => clearInterval(interval);
     }
-  }, [state]);
+  }, [state, variant]);
 
-  // Auto-scroll terminal
+  // Auto-scroll content
   useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    if (contentRef.current) {
+      contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
   }, [messages, streamingContent]);
 
@@ -93,12 +83,14 @@ const InteractiveDemo = () => {
           if (session.remaining <= 0) {
             setState("exhausted");
             setMessages([
-              { type: "system", content: "Welcome back!\nYou've used your 3 free questions. Ready for unlimited access?" }
+              {
+                type: "system",
+                content: "Welcome back!\nYou've used your 3 free questions. Ready for unlimited access?",
+              },
             ]);
           }
         }
       } catch (e) {
-        // Clear corrupted localStorage data to prevent repeated failures
         console.error("Failed to restore demo session from localStorage:", e);
         localStorage.removeItem("rezzy_demo_session");
       }
@@ -110,7 +102,7 @@ const InteractiveDemo = () => {
   };
 
   const addMessage = (msg: Message) => {
-    setMessages(prev => [...prev, msg]);
+    setMessages((prev) => [...prev, msg]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,7 +140,7 @@ const InteractiveDemo = () => {
         setState("awaiting_email");
         addMessage({
           type: "assistant",
-          content: "Good question. Drop your email and I'll pull up the answer."
+          content: "Good question. Drop your email and I'll pull up the answer.",
         });
       }
     } else if (state === "awaiting_email") {
@@ -188,7 +180,7 @@ const InteractiveDemo = () => {
       const response = await fetch(`${SUPABASE_URL}/functions/v1/demo-chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userEmail, question: userQuestion })
+        body: JSON.stringify({ email: userEmail, question: userQuestion }),
       });
 
       // Handle non-streaming errors
@@ -199,7 +191,7 @@ const InteractiveDemo = () => {
         } catch (jsonError) {
           console.error("Server returned non-JSON error response:", {
             status: response.status,
-            statusText: response.statusText
+            statusText: response.statusText,
           });
           throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
@@ -208,15 +200,16 @@ const InteractiveDemo = () => {
           setRemaining(0);
           saveSession(userEmail, 0);
           setState("exhausted");
-          // Remove "Checking..." message and add exhausted message
-          setMessages(prev => {
-            const filtered = prev.filter(m => m.content !== "Checking...");
-            return [...filtered, {
-              type: "assistant",
-              content: "You've used your 3 free questions. Ready for unlimited access?"
-            }];
+          setMessages((prev) => {
+            const filtered = prev.filter((m) => m.content !== "Checking...");
+            return [
+              ...filtered,
+              {
+                type: "assistant",
+                content: "You've used your 3 free questions. Ready for unlimited access?",
+              },
+            ];
           });
-          // Auto-redirect after a moment
           setTimeout(() => {
             navigate(`/auth?email=${encodeURIComponent(userEmail)}`);
           }, 2000);
@@ -225,14 +218,14 @@ const InteractiveDemo = () => {
 
         if (errorData.error === "invalid_email" || errorData.error === "invalid_email_domain") {
           setState("awaiting_email");
-          setMessages(prev => prev.filter(m => m.content !== "Checking..."));
+          setMessages((prev) => prev.filter((m) => m.content !== "Checking..."));
           setErrorMessage(errorData.message || "That email doesn't look right. Try again?");
           return;
         }
 
         if (errorData.error === "invalid_question") {
           setState("idle");
-          setMessages(prev => prev.filter(m => m.content !== "Checking..."));
+          setMessages((prev) => prev.filter((m) => m.content !== "Checking..."));
           addMessage({ type: "assistant", content: errorData.message });
           return;
         }
@@ -241,7 +234,7 @@ const InteractiveDemo = () => {
       }
 
       // Remove "Checking..." message
-      setMessages(prev => prev.filter(m => m.content !== "Checking..."));
+      setMessages((prev) => prev.filter((m) => m.content !== "Checking..."));
 
       // Stream the response
       const reader = response.body?.getReader();
@@ -269,7 +262,6 @@ const InteractiveDemo = () => {
               if (parsed.type === "started" && parsed.remaining !== undefined) {
                 setRemaining(parsed.remaining);
               } else if (parsed.type === "text_delta") {
-                // Switch from thinking to streaming on first content
                 setState("streaming");
                 fullContent += parsed.delta;
                 setStreamingContent(fullContent);
@@ -282,14 +274,12 @@ const InteractiveDemo = () => {
                 throw new Error(parsed.message);
               }
             } catch (parseError) {
-              // Re-throw errors from the error event handler
               if (parseError instanceof Error && parseError.message && !parseError.message.includes("JSON")) {
                 throw parseError;
               }
-              // Log JSON parse errors for debugging but continue processing
               console.warn("Failed to parse streaming response line:", {
                 line: line.substring(0, 100),
-                error: parseError instanceof Error ? parseError.message : "Unknown error"
+                error: parseError instanceof Error ? parseError.message : "Unknown error",
               });
             }
           }
@@ -303,201 +293,148 @@ const InteractiveDemo = () => {
       }
 
       setState("complete");
-
     } catch (error) {
       console.error("Demo chat error:", error);
       setState(email ? "complete" : "idle");
       addMessage({
         type: "error",
-        content: error instanceof Error ? error.message : "Something went wrong. Try again?"
+        content: error instanceof Error ? error.message : "Something went wrong. Try again?",
       });
     }
   };
 
-  const getPlaceholder = () => {
-    switch (state) {
-      case "idle":
-      case "complete":
-        return "Type a clinical question...";
-      case "awaiting_email":
-        return "Enter your email...";
-      case "exhausted":
-        return "Press Enter to sign up...";
-      default:
-        return "";
-    }
+  const handleSuggestionClick = (suggestion: string) => {
+    setInput(suggestion);
   };
 
-  const isInputDisabled = state === "streaming" || state === "validating" || state === "thinking";
+  const showSuggestions = state === "idle" && messages.length === 1;
 
-  return (
-    <div className="relative">
-      {/* Terminal window */}
-      <div className="relative bg-rezzy-off-black border border-rezzy-gray-dark overflow-hidden crt-glow">
-        {/* Scanline effect */}
-        <div className="scanline" />
+  // Render streaming content with cursor (terminal only)
+  const renderStreamingContent = () => {
+    if (state !== "streaming" || !streamingContent) return null;
 
-        {/* Terminal header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-rezzy-dark border-b border-rezzy-gray-dark">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500/80" />
-            <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-            <div className="w-3 h-3 rounded-full bg-green-500/80" />
+    if (variant === "chat") {
+      return (
+        <div className="flex justify-start">
+          <div className="bg-rezzy-off-black rounded-2xl px-4 py-3 max-w-[85%]">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-rezzy-green rounded-full animate-pulse" />
+              <span className="text-rezzy-green text-xs font-medium">REZZY</span>
+            </div>
+            <p className="text-rezzy-gray-light text-sm whitespace-pre-wrap">
+              {streamingContent}
+            </p>
           </div>
-          <span className="text-rezzy-gray text-xs font-mono">rezzy.terminal</span>
-          <div className="w-16" />
         </div>
+      );
+    }
 
-        {/* Terminal content */}
-        <div
-          ref={terminalRef}
-          className="p-5 min-h-[320px] max-h-[480px] overflow-y-auto space-y-4"
-        >
-          {/* Messages */}
-          {messages.map((msg, idx) => (
-            <div key={idx} className="font-mono text-sm leading-relaxed">
-              {msg.type === "system" && (
-                <p className="text-rezzy-gray-light whitespace-pre-wrap">{msg.content}</p>
-              )}
-              {msg.type === "user" && (
-                <div className="flex items-start gap-2">
-                  <span className="text-rezzy-green">→</span>
-                  <span className="text-rezzy-white">{msg.content}</span>
-                </div>
-              )}
-              {msg.type === "assistant" && (
-                <div className="mt-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 bg-rezzy-green" />
-                    <span className="text-rezzy-green text-xs tracking-wider">REZZY</span>
-                  </div>
-                  <pre className="text-rezzy-gray-light whitespace-pre-wrap pl-4">
-                    {msg.content}
-                  </pre>
-                </div>
-              )}
-              {msg.type === "error" && (
-                <p className="text-red-400 pl-4">{msg.content}</p>
-              )}
-            </div>
-          ))}
+    return (
+      <div className="font-mono text-sm leading-relaxed mt-2">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-2 h-2 bg-rezzy-green animate-pulse" />
+          <span className="text-rezzy-green text-xs tracking-wider">REZZY</span>
+          <span className="text-rezzy-gray text-xs">processing...</span>
+        </div>
+        <pre className="text-rezzy-gray-light whitespace-pre-wrap pl-4">
+          {streamingContent}
+          <span
+            className={`inline-block w-2 h-4 bg-rezzy-green ml-0.5 align-middle transition-opacity duration-100 ${
+              cursorVisible ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        </pre>
+      </div>
+    );
+  };
 
-          {/* Thinking indicator (Claude Code style) */}
-          {state === "thinking" && (
-            <div className="font-mono text-sm leading-relaxed mt-2">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 bg-rezzy-green animate-pulse" />
-                <span className="text-rezzy-green text-xs tracking-wider">REZZY</span>
-              </div>
-              <div className="pl-4 flex items-center gap-3">
-                {/* Animated dots */}
-                <div className="flex gap-1">
-                  <span className="w-1.5 h-1.5 bg-rezzy-green/60 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-1.5 h-1.5 bg-rezzy-green/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-1.5 h-1.5 bg-rezzy-green/60 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                </div>
-                {/* Rotating phrase */}
-                <span className="text-rezzy-gray text-xs transition-opacity duration-300">
-                  {THINKING_PHRASES[thinkingPhrase]}...
-                </span>
-              </div>
-            </div>
-          )}
+  // Content area (messages + streaming + input)
+  const renderContent = () => (
+    <div
+      ref={contentRef}
+      className={`overflow-y-auto space-y-4 ${
+        variant === "chat"
+          ? "p-4 min-h-[280px] max-h-[400px]"
+          : "p-5 min-h-[320px] max-h-[480px]"
+      }`}
+    >
+      {/* Messages */}
+      {messages.map((msg, idx) => (
+        <ChatMessage key={idx} message={msg} variant={variant} />
+      ))}
 
-          {/* Streaming content */}
-          {state === "streaming" && streamingContent && (
-            <div className="font-mono text-sm leading-relaxed mt-2">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 bg-rezzy-green animate-pulse" />
-                <span className="text-rezzy-green text-xs tracking-wider">REZZY</span>
-                <span className="text-rezzy-gray text-xs">processing...</span>
-              </div>
-              <pre className="text-rezzy-gray-light whitespace-pre-wrap pl-4">
-                {streamingContent}
-                <span
-                  className={`inline-block w-2 h-4 bg-rezzy-green ml-0.5 align-middle transition-opacity duration-100 ${
-                    cursorVisible ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              </pre>
-            </div>
-          )}
+      {/* Thinking indicator */}
+      {state === "thinking" && (
+        <ThinkingIndicator variant={variant} phraseIndex={thinkingPhrase} />
+      )}
 
-          {/* Input form */}
-          <form onSubmit={handleSubmit} className="mt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-rezzy-green font-mono text-sm">→</span>
-              <input
-                ref={inputRef}
-                type={state === "awaiting_email" ? "email" : "text"}
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  setErrorMessage("");
-                }}
-                placeholder={getPlaceholder()}
-                disabled={isInputDisabled}
-                className="flex-1 bg-transparent text-rezzy-white font-mono text-sm
-                         focus:outline-none placeholder:text-rezzy-gray-dark
-                         disabled:opacity-50 caret-rezzy-green"
-                autoComplete={state === "awaiting_email" ? "email" : "off"}
-              />
-              {!isInputDisabled && input.length === 0 && (
-                <span
-                  className={`w-2 h-4 bg-rezzy-green transition-opacity duration-100 ${
-                    cursorVisible ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              )}
-            </div>
-            {errorMessage && (
-              <p className="text-red-400 text-xs font-mono mt-2 pl-4">{errorMessage}</p>
+      {/* Streaming content */}
+      {renderStreamingContent()}
+
+      {/* Input */}
+      <ChatInput
+        ref={inputRef}
+        value={input}
+        onChange={setInput}
+        onSubmit={handleSubmit}
+        state={state}
+        errorMessage={errorMessage}
+        variant={variant}
+        cursorVisible={cursorVisible}
+        showSuggestions={showSuggestions}
+        onSuggestionClick={handleSuggestionClick}
+      />
+    </div>
+  );
+
+  // Mobile chat UI
+  if (variant === "chat") {
+    return (
+      <div className="relative">
+        <div className="bg-rezzy-off-black border border-rezzy-gray-dark rounded-xl overflow-hidden">
+          {renderContent()}
+
+          {/* Footer with remaining queries */}
+          <div className="px-4 py-2 bg-rezzy-dark/50 border-t border-rezzy-gray-dark flex justify-between items-center">
+            <span className="text-rezzy-gray text-xs">
+              {state === "thinking"
+                ? "Thinking..."
+                : state === "streaming"
+                ? "Responding..."
+                : "Ready"}
+            </span>
+            {remaining !== null && remaining > 0 && (
+              <span className="text-rezzy-green text-xs">
+                {remaining} free {remaining === 1 ? "question" : "questions"} left
+              </span>
             )}
-          </form>
-
-          {/* Suggestion chips (only in idle state with no messages from user) */}
-          {state === "idle" && messages.length === 1 && (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {["Amoxicillin dosing 15kg", "Fever in infant", "Rash with fever"].map(
-                (suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => setInput(suggestion)}
-                    className="text-rezzy-gray hover:text-rezzy-green font-mono text-xs
-                             border border-rezzy-gray-dark hover:border-rezzy-green/50
-                             px-3 py-1.5 transition-all duration-200 hover:bg-rezzy-green/5"
-                  >
-                    {suggestion}
-                  </button>
-                )
-              )}
-            </div>
-          )}
+            {remaining === 0 && (
+              <span className="text-rezzy-gray-dark text-xs">Sign up for unlimited</span>
+            )}
+          </div>
         </div>
 
-        {/* Terminal footer */}
-        <div className="px-4 py-2 bg-rezzy-dark border-t border-rezzy-gray-dark flex justify-between items-center">
-          <span className="text-rezzy-gray text-xs font-mono">
-            {state === "thinking"
-              ? "Thinking..."
-              : state === "streaming" || state === "validating"
-              ? "Processing..."
-              : state === "exhausted"
-              ? "Demo complete"
-              : "Ready"}
+        {/* Trust badges */}
+        <div className="mt-4 flex items-center justify-center gap-4 text-rezzy-gray text-xs">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 bg-rezzy-green rounded-full" />
+            Evidence-based
           </span>
-          {remaining !== null && remaining > 0 && (
-            <span className="text-rezzy-green text-xs font-mono">
-              {remaining} free {remaining === 1 ? "question" : "questions"} remaining
-            </span>
-          )}
-          {remaining === 0 && (
-            <span className="text-rezzy-gray-dark text-xs font-mono">
-              Sign up for unlimited
-            </span>
-          )}
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 bg-rezzy-green rounded-full" />
+            HIPAA compliant
+          </span>
         </div>
       </div>
+    );
+  }
+
+  // Desktop terminal UI
+  return (
+    <div className="relative">
+      <TerminalChrome state={state} remaining={remaining}>
+        {renderContent()}
+      </TerminalChrome>
 
       {/* Trust badges */}
       <div className="mt-4 flex items-center justify-center gap-4 text-rezzy-gray text-xs font-mono">
