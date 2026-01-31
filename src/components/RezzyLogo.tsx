@@ -47,7 +47,7 @@ const RezzyLogo = ({ size = 40, className = '', variant = 'default' }: RezzyLogo
       {/* Antenna */}
       <g>
         <line x1="50" y1="8" x2="50" y2="0" stroke={c.antenna} strokeWidth="3" strokeLinecap="round"/>
-        <circle cx="50" cy="0" r="4" fill={c.antenna}/>
+        <circle className="antenna-glow" cx="50" cy="0" r="4" fill={c.antenna} style={{ transformOrigin: '50px 0px' }}/>
       </g>
 
       {/* R Body */}

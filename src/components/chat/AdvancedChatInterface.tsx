@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import RezzyLogo from "@/components/RezzyLogo";
+import ThinkingIndicator from "./ThinkingIndicator";
 import {
   Send,
   StopCircle,
@@ -30,6 +31,7 @@ const AdvancedChatInterface = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -48,13 +50,19 @@ const AdvancedChatInterface = () => {
     deleteConversation,
   } = useAdvancedAIChat();
 
+  // Calculate thinking indicator visibility
+  const showThinkingIndicator =
+    (isUploadingFiles || isSendingMessage || streamingState.isStreaming) &&
+    !streamingState.streamingMessage &&
+    !streamingState.currentFunction;
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, streamingState.streamingMessage]);
+  }, [messages, streamingState.streamingMessage, showThinkingIndicator]);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isSendingMessage) return;
@@ -65,9 +73,14 @@ const AdvancedChatInterface = () => {
     let fileIds: string[] = [];
     let uploadConversationId: string | null = null;
     if (selectedFiles.length > 0) {
-      const uploadResult = await uploadFiles(selectedFiles);
-      fileIds = uploadResult.fileIds;
-      uploadConversationId = uploadResult.conversationId;
+      setIsUploadingFiles(true);
+      try {
+        const uploadResult = await uploadFiles(selectedFiles);
+        fileIds = uploadResult.fileIds;
+        uploadConversationId = uploadResult.conversationId;
+      } finally {
+        setIsUploadingFiles(false);
+      }
       setSelectedFiles([]);
     }
 
@@ -253,7 +266,7 @@ const AdvancedChatInterface = () => {
         <ScrollArea className="flex-1">
           <div className="max-w-2xl mx-auto py-8">
             {/* Welcome State */}
-            {messages.length === 0 && !streamingState.streamingMessage && (
+            {messages.length === 0 && !streamingState.streamingMessage && !showThinkingIndicator && (
               <div className="px-4 py-16 text-center">
                 <div className="mx-auto mb-6 flex justify-center">
                   <RezzyLogo size={56} />
@@ -275,6 +288,9 @@ const AdvancedChatInterface = () => {
                 showReasoning={streamingState.showReasoning}
               />
             ))}
+
+            {/* Thinking indicator - shows before response text arrives */}
+            <ThinkingIndicator visible={showThinkingIndicator} />
 
             {/* Streaming message */}
             {streamingState.streamingMessage && (

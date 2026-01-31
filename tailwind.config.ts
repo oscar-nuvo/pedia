@@ -265,6 +265,25 @@ export default {
 				'wiggle': {
 					'0%, 100%': { transform: 'rotate(-2deg)' },
 					'50%': { transform: 'rotate(2deg)' }
+				},
+				// Thinking indicator animations
+				'thinking-float': {
+					'0%, 100%': { transform: 'translateY(0px)' },
+					'50%': { transform: 'translateY(-4px)' }
+				},
+				'antenna-pulse': {
+					'0%, 100%': {
+						opacity: '1',
+						transform: 'scale(1)'
+					},
+					'50%': {
+						opacity: '0.6',
+						transform: 'scale(1.3)'
+					}
+				},
+				'cursor-blink': {
+					'0%, 50%': { opacity: '1' },
+					'51%, 100%': { opacity: '0' }
 				}
 			},
 			animation: {
@@ -285,7 +304,10 @@ export default {
 				'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite',
 				'grow': 'grow 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
 				'spring-in': 'spring-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
-				'wiggle': 'wiggle 0.5s ease-in-out'
+				'wiggle': 'wiggle 0.5s ease-in-out',
+				'thinking-float': 'thinking-float 2s ease-in-out infinite',
+				'antenna-pulse': 'antenna-pulse 1.5s ease-in-out infinite',
+				'cursor-blink': 'cursor-blink 0.8s step-end infinite'
 			},
 			// Spring-based easing functions
 			transitionTimingFunction: {
