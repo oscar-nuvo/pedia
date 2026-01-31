@@ -14,16 +14,21 @@ const HeroSection = () => {
   return (
     <section
       ref={heroRef}
-      className="relative min-h-screen bg-rezzy-black overflow-hidden"
+      className="relative min-h-screen bg-rezzy-cream overflow-hidden"
     >
-      {/* Background grid */}
-      <div className="absolute inset-0 grid-bg opacity-50" />
-
-      {/* Gradient mesh background */}
-      <div className="absolute inset-0 gradient-mesh" />
-
-      {/* Noise overlay */}
-      <div className="noise-overlay" />
+      {/* Floating blob backgrounds */}
+      <div
+        className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-rezzy-sage-lighter rounded-full opacity-40"
+        style={{ filter: "blur(80px)" }}
+      />
+      <div
+        className="absolute -bottom-24 -left-24 w-[350px] h-[350px] bg-rezzy-coral-pale rounded-full opacity-50"
+        style={{ filter: "blur(80px)" }}
+      />
+      <div
+        className="absolute top-1/2 left-[10%] w-[200px] h-[200px] bg-rezzy-cream-warm rounded-full opacity-60"
+        style={{ filter: "blur(80px)" }}
+      />
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-6 lg:px-12 pt-20 md:pt-32 pb-16 md:pb-24">
@@ -37,25 +42,26 @@ const HeroSection = () => {
                 : "opacity-0 translate-y-4"
             }`}
           >
-            <span className="inline-flex items-center gap-2 text-rezzy-green font-mono text-xs tracking-wider">
-              <span className="w-2 h-2 bg-rezzy-green animate-pulse" />
-              AI-POWERED CLINICAL ASSISTANT
+            <span className="inline-flex items-center gap-2 text-rezzy-sage font-medium text-xs tracking-wider bg-rezzy-sage-pale px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 bg-rezzy-sage rounded-full animate-pulse" />
+              AI Clinical Companion
             </span>
           </div>
 
           {/* Headline - Compact on mobile */}
           <h1
-            className={`transition-all duration-700 delay-100 ${
+            className={`font-display transition-all duration-700 delay-100 ${
               isVisible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-4"
             }`}
           >
-            <span className="block text-2xl sm:text-3xl font-bold text-rezzy-white leading-tight tracking-tight">
-              Your unfair advantage
+            <span className="block text-2xl sm:text-3xl font-bold text-rezzy-ink leading-tight tracking-tight">
+              Your residency{" "}
+              <span className="text-rezzy-sage">superpower</span>,
             </span>
-            <span className="block text-2xl sm:text-3xl font-bold leading-tight tracking-tight text-glow text-rezzy-green">
-              in residency.
+            <span className="block text-2xl sm:text-3xl font-bold text-rezzy-ink leading-tight tracking-tight">
+              always on call
             </span>
           </h1>
 
@@ -83,41 +89,42 @@ const HeroSection = () => {
                   : "opacity-0 translate-y-4"
               }`}
             >
-              <span className="inline-flex items-center gap-2 text-rezzy-green font-mono text-sm tracking-wider">
-                <span className="w-2 h-2 bg-rezzy-green animate-pulse" />
-                AI-POWERED CLINICAL ASSISTANT
+              <span className="inline-flex items-center gap-2 text-rezzy-sage font-medium text-sm tracking-wider bg-rezzy-sage-pale px-4 py-2 rounded-full">
+                <span className="w-2 h-2 bg-rezzy-sage rounded-full animate-pulse" />
+                AI Clinical Companion
               </span>
             </div>
 
             {/* Main headline - Stacked on desktop */}
             <h1
-              className={`transition-all duration-700 delay-100 ${
+              className={`font-display transition-all duration-700 delay-100 ${
                 isVisible
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-4"
               }`}
             >
-              <span className="block text-4xl lg:text-6xl xl:text-7xl font-bold text-rezzy-white leading-[0.95] tracking-tight">
-                Your unfair
+              <span className="block text-4xl lg:text-6xl xl:text-7xl font-bold text-rezzy-ink leading-[0.95] tracking-tight">
+                Your residency
               </span>
-              <span className="block text-4xl lg:text-6xl xl:text-7xl font-bold text-rezzy-white leading-[0.95] tracking-tight">
-                advantage
+              <span className="block text-4xl lg:text-6xl xl:text-7xl font-bold leading-[0.95] tracking-tight">
+                <span className="text-rezzy-sage">superpower</span>
+                <span className="text-rezzy-ink">,</span>
               </span>
-              <span className="block text-4xl lg:text-6xl xl:text-7xl font-bold leading-[0.95] tracking-tight text-glow text-rezzy-green">
-                in residency.
+              <span className="block text-4xl lg:text-6xl xl:text-7xl font-bold text-rezzy-ink leading-[0.95] tracking-tight">
+                always on call
               </span>
             </h1>
 
             {/* Subheadline - Desktop only */}
             <p
-              className={`text-rezzy-gray-light text-lg lg:text-xl max-w-md leading-relaxed transition-all duration-700 delay-200 ${
+              className={`text-rezzy-ink-muted text-lg lg:text-xl max-w-md leading-relaxed transition-all duration-700 delay-200 ${
                 isVisible
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-4"
               }`}
             >
-              Evidence-based answers in seconds. Learn while you work.
-              Never miss a critical detail.
+              Clinical guidance in seconds. Learn the 'why' behind every answer.
+              Feel confident, not overwhelmed.
             </p>
 
             {/* Stats row - Desktop only */}
@@ -129,16 +136,16 @@ const HeroSection = () => {
               }`}
             >
               <div>
-                <div className="text-3xl font-bold text-rezzy-white">2 min</div>
-                <div className="text-rezzy-gray text-sm mt-1">avg. decision time</div>
+                <div className="text-3xl font-bold text-rezzy-ink font-display">2 min</div>
+                <div className="text-rezzy-ink-muted text-sm mt-1">avg. decision time</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-rezzy-white">47</div>
-                <div className="text-rezzy-gray text-sm mt-1">patients / shift</div>
+                <div className="text-3xl font-bold text-rezzy-ink font-display">47</div>
+                <div className="text-rezzy-ink-muted text-sm mt-1">patients / shift</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-rezzy-green">∞</div>
-                <div className="text-rezzy-gray text-sm mt-1">knowledge access</div>
+                <div className="text-3xl font-bold text-rezzy-sage font-display">&#8734;</div>
+                <div className="text-rezzy-ink-muted text-sm mt-1">knowledge access</div>
               </div>
             </div>
           </div>
@@ -161,9 +168,9 @@ const HeroSection = () => {
             isVisible ? "opacity-100" : "opacity-0"
           }`}
         >
-          <div className="flex flex-col items-center gap-2 text-rezzy-gray">
+          <div className="flex flex-col items-center gap-2 text-rezzy-ink-muted">
             <span className="text-xs font-mono tracking-wider">SCROLL</span>
-            <div className="w-px h-8 bg-gradient-to-b from-rezzy-gray to-transparent" />
+            <div className="w-px h-8 bg-gradient-to-b from-rezzy-ink-muted to-transparent" />
           </div>
         </div>
       </div>

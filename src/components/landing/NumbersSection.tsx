@@ -89,14 +89,17 @@ const NumbersSection = () => {
     <section
       ref={sectionRef}
       id="how-it-works"
-      className="relative bg-rezzy-black py-32 overflow-hidden"
+      className="relative bg-rezzy-ink py-32 overflow-hidden"
     >
+      {/* Radial gradient glow effect with sage */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-rezzy-sage/10 via-transparent to-transparent blur-3xl" />
+
       {/* Background accent */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-rezzy-gray-dark to-transparent" />
-      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-rezzy-gray-dark to-transparent" />
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-rezzy-ink-soft to-transparent" />
+      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-rezzy-ink-soft to-transparent" />
 
       {/* Vertical accent line */}
-      <div className="absolute left-8 lg:left-16 top-0 bottom-0 w-px bg-rezzy-gray-dark/30" />
+      <div className="absolute left-8 lg:left-16 top-0 bottom-0 w-px bg-rezzy-sage/20" />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         {/* Section header */}
@@ -105,7 +108,7 @@ const NumbersSection = () => {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
-          <span className="text-rezzy-green font-mono text-sm tracking-wider">
+          <span className="text-rezzy-sage-light font-mono text-sm tracking-wider">
             THE REALITY
           </span>
         </div>
@@ -125,12 +128,12 @@ const NumbersSection = () => {
               <div className="relative group">
                 {/* Number */}
                 <div className="relative">
-                  <span className="text-8xl sm:text-9xl lg:text-[10rem] xl:text-[12rem] font-bold text-rezzy-white leading-none tracking-tighter">
+                  <span className="text-8xl sm:text-9xl lg:text-[10rem] xl:text-[12rem] font-display font-bold text-rezzy-sage-light leading-none tracking-tighter">
                     <Counter end={stat.number} suffix={stat.suffix} isVisible={isVisible} />
                   </span>
 
                   {/* Glow effect on hover */}
-                  <div className="absolute inset-0 text-8xl sm:text-9xl lg:text-[10rem] xl:text-[12rem] font-bold text-rezzy-green leading-none tracking-tighter opacity-0 group-hover:opacity-20 transition-opacity duration-500 blur-2xl">
+                  <div className="absolute inset-0 text-8xl sm:text-9xl lg:text-[10rem] xl:text-[12rem] font-display font-bold text-rezzy-sage leading-none tracking-tighter opacity-0 group-hover:opacity-20 transition-opacity duration-500 blur-2xl">
                     {stat.number}
                     {stat.suffix}
                   </div>
@@ -138,14 +141,14 @@ const NumbersSection = () => {
 
                 {/* Labels */}
                 <div className="mt-4 space-y-1">
-                  <div className="text-rezzy-white font-semibold text-sm tracking-wider">
+                  <div className="text-white/60 font-semibold text-sm tracking-wider">
                     {stat.label}
                   </div>
-                  <div className="text-rezzy-gray text-sm">{stat.sublabel}</div>
+                  <div className="text-rezzy-cream/60 text-sm">{stat.sublabel}</div>
                 </div>
 
                 {/* Decorative line */}
-                <div className="mt-6 w-12 h-px bg-rezzy-gray-dark group-hover:bg-rezzy-green group-hover:w-24 transition-all duration-500" />
+                <div className="mt-6 w-12 h-px bg-rezzy-ink-soft group-hover:bg-rezzy-sage group-hover:w-24 transition-all duration-500" />
               </div>
             </div>
           ))}
@@ -158,9 +161,9 @@ const NumbersSection = () => {
           }`}
           style={{ transitionDelay: "800ms" }}
         >
-          <p className="text-2xl sm:text-3xl lg:text-4xl text-rezzy-white font-medium leading-snug">
+          <p className="text-2xl sm:text-3xl lg:text-4xl text-rezzy-cream font-medium leading-snug">
             Rezzy helps you make the{" "}
-            <span className="text-rezzy-green text-glow-subtle">right decision</span>{" "}
+            <span className="text-rezzy-sage-light">right decision</span>{" "}
             in those 2 minutes.
           </p>
         </div>

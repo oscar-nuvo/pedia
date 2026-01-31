@@ -134,31 +134,31 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-rezzy-black px-4 pt-12 pb-8 md:pt-16">
+    <div className="min-h-screen bg-rezzy-cream px-4 pt-12 pb-8 md:pt-16">
       <div className="w-full max-w-md mx-auto">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="relative w-8 h-8">
-            <div className="absolute inset-0 bg-rezzy-green" />
-            <div className="absolute top-1 left-1 w-3 h-3 bg-rezzy-black" />
+          <div className="relative w-10 h-10">
+            <div className="absolute inset-0 bg-rezzy-sage rounded-xl" />
+            <div className="absolute top-1.5 left-1.5 w-4 h-4 bg-rezzy-cream rounded-lg" />
           </div>
-          <span className="text-rezzy-white font-semibold text-2xl tracking-tight">
-            REZZY
+          <span className="text-rezzy-ink font-display font-semibold text-2xl tracking-tight">
+            Rezzy
           </span>
         </div>
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-rezzy-white mb-2">
+          <h1 className="text-2xl font-bold text-rezzy-ink mb-2">
             {isSignUp ? 'Unlock unlimited access' : 'Welcome back'}
           </h1>
           {prefillEmail && isSignUp && (
-            <p className="text-rezzy-gray-light text-sm">
+            <p className="text-rezzy-ink-muted text-sm">
               You asked 3 questions. Keep going.
             </p>
           )}
           {!prefillEmail && !isSignUp && (
-            <p className="text-rezzy-gray-light text-sm">
+            <p className="text-rezzy-ink-muted text-sm">
               Sign in to your account
             </p>
           )}
@@ -169,7 +169,7 @@ export default function Auth() {
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-rezzy-gray-light text-sm">
+                <Label htmlFor="firstName" className="text-rezzy-ink-muted text-sm">
                   First Name
                 </Label>
                 <Input
@@ -177,13 +177,13 @@ export default function Auth() {
                   name="firstName"
                   placeholder="John"
                   required
-                  className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
-                           placeholder:text-rezzy-gray-dark focus:border-rezzy-green
-                           focus:ring-rezzy-green/20"
+                  className="bg-white border-rezzy-cream-deep text-rezzy-ink
+                           placeholder:text-rezzy-ink-light focus:border-rezzy-sage
+                           focus:ring-rezzy-sage/20 rounded-xl"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-rezzy-gray-light text-sm">
+                <Label htmlFor="lastName" className="text-rezzy-ink-muted text-sm">
                   Last Name
                 </Label>
                 <Input
@@ -191,14 +191,14 @@ export default function Auth() {
                   name="lastName"
                   placeholder="Doe"
                   required
-                  className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
-                           placeholder:text-rezzy-gray-dark focus:border-rezzy-green
-                           focus:ring-rezzy-green/20"
+                  className="bg-white border-rezzy-cream-deep text-rezzy-ink
+                           placeholder:text-rezzy-ink-light focus:border-rezzy-sage
+                           focus:ring-rezzy-sage/20 rounded-xl"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="signup-email" className="text-rezzy-gray-light text-sm">
+              <Label htmlFor="signup-email" className="text-rezzy-ink-muted text-sm">
                 Email
               </Label>
               <Input
@@ -208,13 +208,13 @@ export default function Auth() {
                 placeholder="john@example.com"
                 defaultValue={prefillEmail}
                 required
-                className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
-                         placeholder:text-rezzy-gray-dark focus:border-rezzy-green
-                         focus:ring-rezzy-green/20"
+                className="bg-white border-rezzy-cream-deep text-rezzy-ink
+                         placeholder:text-rezzy-ink-light focus:border-rezzy-sage
+                         focus:ring-rezzy-sage/20 rounded-xl"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="signup-password" className="text-rezzy-gray-light text-sm">
+              <Label htmlFor="signup-password" className="text-rezzy-ink-muted text-sm">
                 Password
               </Label>
               <Input
@@ -223,15 +223,15 @@ export default function Auth() {
                 type="password"
                 placeholder="Minimum 8 characters"
                 required
-                className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
-                         placeholder:text-rezzy-gray-dark focus:border-rezzy-green
-                         focus:ring-rezzy-green/20"
+                className="bg-white border-rezzy-cream-deep text-rezzy-ink
+                         placeholder:text-rezzy-ink-light focus:border-rezzy-sage
+                         focus:ring-rezzy-sage/20 rounded-xl"
               />
             </div>
             <Button
               type="submit"
-              className="w-full bg-rezzy-green text-rezzy-black font-semibold
-                       hover:bg-rezzy-green/90 h-11 mt-2"
+              className="w-full bg-rezzy-sage text-white font-semibold
+                       hover:bg-rezzy-sage-light rounded-full h-11 mt-2"
               disabled={loading}
             >
               {loading ? "Creating account..." : "Create Account"}
@@ -240,7 +240,7 @@ export default function Auth() {
         ) : (
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="signin-email" className="text-rezzy-gray-light text-sm">
+              <Label htmlFor="signin-email" className="text-rezzy-ink-muted text-sm">
                 Email
               </Label>
               <Input
@@ -249,13 +249,13 @@ export default function Auth() {
                 type="email"
                 placeholder="Enter your email"
                 required
-                className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
-                         placeholder:text-rezzy-gray-dark focus:border-rezzy-green
-                         focus:ring-rezzy-green/20"
+                className="bg-white border-rezzy-cream-deep text-rezzy-ink
+                         placeholder:text-rezzy-ink-light focus:border-rezzy-sage
+                         focus:ring-rezzy-sage/20 rounded-xl"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="signin-password" className="text-rezzy-gray-light text-sm">
+              <Label htmlFor="signin-password" className="text-rezzy-ink-muted text-sm">
                 Password
               </Label>
               <Input
@@ -264,15 +264,15 @@ export default function Auth() {
                 type="password"
                 placeholder="Enter your password"
                 required
-                className="bg-rezzy-off-black border-rezzy-gray-dark text-rezzy-white
-                         placeholder:text-rezzy-gray-dark focus:border-rezzy-green
-                         focus:ring-rezzy-green/20"
+                className="bg-white border-rezzy-cream-deep text-rezzy-ink
+                         placeholder:text-rezzy-ink-light focus:border-rezzy-sage
+                         focus:ring-rezzy-sage/20 rounded-xl"
               />
             </div>
             <Button
               type="submit"
-              className="w-full bg-rezzy-green text-rezzy-black font-semibold
-                       hover:bg-rezzy-green/90 h-11 mt-2"
+              className="w-full bg-rezzy-sage text-white font-semibold
+                       hover:bg-rezzy-sage-light rounded-full h-11 mt-2"
               disabled={loading}
             >
               {loading ? "Signing in..." : "Sign In"}
@@ -283,24 +283,24 @@ export default function Auth() {
         {/* Toggle link */}
         <div className="text-center mt-6">
           {isSignUp ? (
-            <p className="text-rezzy-gray-light text-sm">
+            <p className="text-rezzy-ink-muted text-sm">
               Already have an account?{' '}
               <button
                 type="button"
                 onClick={() => setIsSignUp(false)}
-                className="text-rezzy-green hover:text-rezzy-green/80 font-medium
+                className="text-rezzy-sage hover:text-rezzy-sage-light font-medium
                          transition-colors focus:outline-none focus:underline"
               >
                 Sign in
               </button>
             </p>
           ) : (
-            <p className="text-rezzy-gray-light text-sm">
+            <p className="text-rezzy-ink-muted text-sm">
               Need an account?{' '}
               <button
                 type="button"
                 onClick={() => setIsSignUp(true)}
-                className="text-rezzy-green hover:text-rezzy-green/80 font-medium
+                className="text-rezzy-sage hover:text-rezzy-sage-light font-medium
                          transition-colors focus:outline-none focus:underline"
               >
                 Sign up
@@ -310,13 +310,13 @@ export default function Auth() {
         </div>
 
         {/* Trust badges */}
-        <div className="flex items-center justify-center gap-6 mt-8 text-rezzy-gray text-xs">
+        <div className="flex items-center justify-center gap-6 mt-8 text-rezzy-ink-muted text-xs">
           <span className="flex items-center gap-1.5">
-            <span className="text-rezzy-green">✓</span>
+            <span className="w-2 h-2 bg-rezzy-sage rounded-full" />
             No credit card
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="text-rezzy-green">✓</span>
+            <span className="w-2 h-2 bg-rezzy-sage rounded-full" />
             Cancel anytime
           </span>
         </div>

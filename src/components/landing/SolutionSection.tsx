@@ -99,13 +99,13 @@ const SolutionSection = () => {
     <section
       ref={sectionRef}
       id="features"
-      className="relative bg-rezzy-off-black py-32 overflow-hidden"
+      className="relative bg-rezzy-cream py-32 overflow-hidden"
     >
       {/* Background elements */}
-      <div className="absolute inset-0 grid-bg opacity-30" />
+      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(74, 155, 140, 0.15) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
 
       {/* Gradient accent */}
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-rezzy-green/5 to-transparent" />
+      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-rezzy-sage-pale/30 to-transparent" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12">
         {/* Section header */}
@@ -114,26 +114,26 @@ const SolutionSection = () => {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
-          <span className="text-rezzy-green font-mono text-sm tracking-wider">
-            CAPABILITIES
+          <span className="text-rezzy-sage font-mono text-sm tracking-wider">
+            FEATURES
           </span>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-rezzy-white mt-4 tracking-tight">
-            Built for the trenches.
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-rezzy-ink mt-4 tracking-tight">
+            Everything you need to feel confident
           </h2>
         </div>
 
         {/* Feature grid */}
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
           {/* Feature list */}
-          <div className="lg:col-span-5 space-y-1">
+          <div className="lg:col-span-5 space-y-3">
             {features.map((feature, index) => (
               <button
                 key={feature.id}
                 onClick={() => setActiveFeature(feature)}
-                className={`w-full text-left p-6 border transition-all duration-300 group ${
+                className={`w-full text-left p-6 rounded-3xl border transition-all duration-300 group hover:-translate-y-2 hover:rotate-[0.5deg] ${
                   activeFeature.id === feature.id
-                    ? "bg-rezzy-dark border-rezzy-green"
-                    : "bg-transparent border-rezzy-gray-dark/50 hover:border-rezzy-gray-dark hover:bg-rezzy-dark/50"
+                    ? "bg-rezzy-cream-warm border-rezzy-sage/30 shadow-lg"
+                    : "bg-rezzy-cream border-rezzy-cream-deep hover:border-rezzy-sage/20 hover:bg-rezzy-cream-warm hover:shadow-md"
                 } ${
                   isVisible
                     ? "opacity-100 translate-x-0"
@@ -144,10 +144,10 @@ const SolutionSection = () => {
                 <div className="flex items-start gap-4">
                   {/* Number */}
                   <span
-                    className={`font-mono text-sm transition-colors duration-300 ${
+                    className={`font-mono text-3xl font-bold transition-colors duration-300 ${
                       activeFeature.id === feature.id
-                        ? "text-rezzy-green"
-                        : "text-rezzy-gray-dark group-hover:text-rezzy-gray"
+                        ? "text-rezzy-sage-lighter"
+                        : "text-rezzy-sage-pale group-hover:text-rezzy-sage-lighter"
                     }`}
                   >
                     {feature.number}
@@ -158,8 +158,8 @@ const SolutionSection = () => {
                     <h3
                       className={`text-xl font-semibold mb-2 transition-colors duration-300 ${
                         activeFeature.id === feature.id
-                          ? "text-rezzy-white"
-                          : "text-rezzy-gray-light group-hover:text-rezzy-white"
+                          ? "text-rezzy-ink"
+                          : "text-rezzy-ink-soft group-hover:text-rezzy-ink"
                       }`}
                     >
                       {feature.title}
@@ -167,8 +167,8 @@ const SolutionSection = () => {
                     <p
                       className={`text-sm leading-relaxed transition-colors duration-300 ${
                         activeFeature.id === feature.id
-                          ? "text-rezzy-gray-light"
-                          : "text-rezzy-gray group-hover:text-rezzy-gray-light"
+                          ? "text-rezzy-ink-muted"
+                          : "text-rezzy-ink-light group-hover:text-rezzy-ink-muted"
                       }`}
                     >
                       {feature.description}
@@ -179,8 +179,8 @@ const SolutionSection = () => {
                   <div
                     className={`mt-1 transition-all duration-300 ${
                       activeFeature.id === feature.id
-                        ? "text-rezzy-green translate-x-0 opacity-100"
-                        : "text-rezzy-gray-dark -translate-x-2 opacity-0 group-hover:opacity-50"
+                        ? "text-rezzy-sage translate-x-0 opacity-100"
+                        : "text-rezzy-ink-light -translate-x-2 opacity-0 group-hover:opacity-50"
                     }`}
                   >
                     →
@@ -199,16 +199,16 @@ const SolutionSection = () => {
             }`}
             style={{ transitionDelay: "600ms" }}
           >
-            <div className="relative bg-rezzy-black border border-rezzy-gray-dark h-full min-h-[400px]">
+            <div className="relative bg-white border border-rezzy-sage/10 rounded-3xl h-full min-h-[400px] shadow-lg">
               {/* Demo header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-rezzy-gray-dark">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-rezzy-cream-deep rounded-t-3xl bg-rezzy-cream-warm/50">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-rezzy-green animate-pulse" />
-                  <span className="text-rezzy-green font-mono text-xs">
+                  <div className="w-2 h-2 bg-rezzy-sage rounded-full animate-pulse" />
+                  <span className="text-rezzy-sage font-mono text-xs">
                     LIVE PREVIEW
                   </span>
                 </div>
-                <span className="text-rezzy-gray-dark font-mono text-xs">
+                <span className="text-rezzy-ink-light font-mono text-xs">
                   {activeFeature.number}
                 </span>
               </div>
@@ -217,31 +217,31 @@ const SolutionSection = () => {
               <div className="p-6 space-y-6">
                 {/* Question */}
                 <div className="flex items-start gap-3">
-                  <span className="text-rezzy-gray-light font-mono text-sm mt-0.5">
+                  <span className="text-rezzy-ink-muted font-mono text-sm mt-0.5">
                     Q:
                   </span>
-                  <p className="text-rezzy-white text-base">
+                  <p className="text-rezzy-ink text-base">
                     {activeFeature.demo.question}
                   </p>
                 </div>
 
                 {/* Divider */}
-                <div className="w-full h-px bg-rezzy-gray-dark/50" />
+                <div className="w-full h-px bg-rezzy-cream-deep" />
 
                 {/* Response */}
                 <div className="flex items-start gap-3">
-                  <span className="text-rezzy-green font-mono text-sm mt-0.5">
+                  <span className="text-rezzy-sage font-mono text-sm mt-0.5">
                     A:
                   </span>
-                  <pre className="text-rezzy-gray-light font-mono text-sm leading-relaxed whitespace-pre-wrap flex-1">
+                  <pre className="text-rezzy-ink-soft font-mono text-sm leading-relaxed whitespace-pre-wrap flex-1">
                     {activeFeature.demo.response}
                   </pre>
                 </div>
               </div>
 
               {/* Demo footer */}
-              <div className="absolute bottom-0 left-0 right-0 px-5 py-3 border-t border-rezzy-gray-dark bg-rezzy-dark/50">
-                <span className="text-rezzy-gray text-xs font-mono">
+              <div className="absolute bottom-0 left-0 right-0 px-5 py-3 border-t border-rezzy-cream-deep bg-rezzy-cream-warm/30 rounded-b-3xl">
+                <span className="text-rezzy-ink-muted text-xs font-mono">
                   Response time: 0.8s • Sources: AAP Guidelines
                 </span>
               </div>

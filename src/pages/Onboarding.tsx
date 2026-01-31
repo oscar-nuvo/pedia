@@ -178,10 +178,19 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-primary px-4">
-      <Card className="w-full max-w-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-rezzy-cream px-4 relative overflow-hidden">
+      {/* Floating blob backgrounds */}
+      <div
+        className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-rezzy-sage-lighter rounded-full opacity-30"
+        style={{ filter: "blur(80px)" }}
+      />
+      <div
+        className="absolute -bottom-24 -left-24 w-[300px] h-[300px] bg-rezzy-coral-pale rounded-full opacity-40"
+        style={{ filter: "blur(80px)" }}
+      />
+      <Card className="w-full max-w-2xl relative z-10">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome to Rezzy</CardTitle>
+          <CardTitle className="text-2xl font-bold font-display">Welcome to Rezzy</CardTitle>
           <CardDescription>
             Step {step} of 2: {step === 1 ? 'Set up your practice' : 'Complete your profile'}
           </CardDescription>

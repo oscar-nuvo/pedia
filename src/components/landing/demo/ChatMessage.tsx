@@ -17,8 +17,8 @@ const ChatBubbleMessage = ({ message }: { message: Message }) => {
   if (message.type === "system") {
     return (
       <div className="flex justify-start">
-        <div className="bg-rezzy-off-black rounded-2xl px-4 py-3 max-w-[85%]">
-          <p className="text-rezzy-gray-light text-sm whitespace-pre-wrap">
+        <div className="bg-rezzy-cream rounded-2xl px-4 py-3 max-w-[85%]">
+          <p className="text-rezzy-ink-muted text-sm whitespace-pre-wrap">
             {message.content}
           </p>
         </div>
@@ -29,8 +29,8 @@ const ChatBubbleMessage = ({ message }: { message: Message }) => {
   if (message.type === "user") {
     return (
       <div className="flex justify-end">
-        <div className="bg-rezzy-green/10 border border-rezzy-green/20 rounded-2xl px-4 py-3 max-w-[85%]">
-          <p className="text-rezzy-white text-sm">{message.content}</p>
+        <div className="bg-rezzy-ink rounded-2xl px-4 py-3 max-w-[85%]">
+          <p className="text-rezzy-cream text-sm">{message.content}</p>
         </div>
       </div>
     );
@@ -39,12 +39,12 @@ const ChatBubbleMessage = ({ message }: { message: Message }) => {
   if (message.type === "assistant") {
     return (
       <div className="flex justify-start">
-        <div className="bg-rezzy-off-black rounded-2xl px-4 py-3 max-w-[85%]">
+        <div className="bg-rezzy-sage-pale rounded-2xl px-4 py-3 max-w-[85%]">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 bg-rezzy-green rounded-full" />
-            <span className="text-rezzy-green text-xs font-medium">REZZY</span>
+            <div className="w-2 h-2 bg-rezzy-sage rounded-full" />
+            <span className="text-rezzy-sage text-xs font-medium">REZZY</span>
           </div>
-          <p className="text-rezzy-gray-light text-sm whitespace-pre-wrap">
+          <p className="text-rezzy-ink text-sm whitespace-pre-wrap">
             {message.content}
           </p>
         </div>
@@ -55,8 +55,8 @@ const ChatBubbleMessage = ({ message }: { message: Message }) => {
   if (message.type === "error") {
     return (
       <div className="flex justify-start">
-        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl px-4 py-3 max-w-[85%]">
-          <p className="text-red-400 text-sm">{message.content}</p>
+        <div className="bg-rezzy-coral-pale border border-rezzy-coral/20 rounded-2xl px-4 py-3 max-w-[85%]">
+          <p className="text-rezzy-coral text-sm">{message.content}</p>
         </div>
       </div>
     );
@@ -69,7 +69,7 @@ const ChatBubbleMessage = ({ message }: { message: Message }) => {
 const TerminalMessage = ({ message }: { message: Message }) => {
   if (message.type === "system") {
     return (
-      <p className="text-rezzy-gray-light whitespace-pre-wrap font-mono text-sm leading-relaxed">
+      <p className="text-rezzy-ink-muted whitespace-pre-wrap font-mono text-sm leading-relaxed">
         {message.content}
       </p>
     );
@@ -78,8 +78,8 @@ const TerminalMessage = ({ message }: { message: Message }) => {
   if (message.type === "user") {
     return (
       <div className="flex items-start gap-2 font-mono text-sm leading-relaxed">
-        <span className="text-rezzy-green">→</span>
-        <span className="text-rezzy-white">{message.content}</span>
+        <span className="text-rezzy-sage">→</span>
+        <span className="text-rezzy-ink">{message.content}</span>
       </div>
     );
   }
@@ -88,10 +88,10 @@ const TerminalMessage = ({ message }: { message: Message }) => {
     return (
       <div className="mt-2 font-mono text-sm leading-relaxed">
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-2 h-2 bg-rezzy-green" />
-          <span className="text-rezzy-green text-xs tracking-wider">REZZY</span>
+          <div className="w-2 h-2 bg-rezzy-sage rounded-full" />
+          <span className="text-rezzy-sage text-xs tracking-wider">REZZY</span>
         </div>
-        <pre className="text-rezzy-gray-light whitespace-pre-wrap pl-4">
+        <pre className="text-rezzy-ink whitespace-pre-wrap pl-4">
           {message.content}
         </pre>
       </div>
@@ -100,7 +100,7 @@ const TerminalMessage = ({ message }: { message: Message }) => {
 
   if (message.type === "error") {
     return (
-      <p className="text-red-400 pl-4 font-mono text-sm leading-relaxed">
+      <p className="text-rezzy-coral pl-4 font-mono text-sm leading-relaxed">
         {message.content}
       </p>
     );

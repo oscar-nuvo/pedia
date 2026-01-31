@@ -116,7 +116,7 @@ const ChatInputMobile = forwardRef<HTMLInputElement, InputVariantProps>(
     return (
       <div className="space-y-3">
         <form onSubmit={onSubmit}>
-          <div className="flex items-center gap-2 bg-rezzy-off-black border border-rezzy-gray-dark rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 bg-rezzy-cream rounded-full px-4 py-2">
             <input
               ref={ref}
               type={state === "awaiting_email" ? "email" : "text"}
@@ -124,14 +124,25 @@ const ChatInputMobile = forwardRef<HTMLInputElement, InputVariantProps>(
               onChange={(e) => onChange(e.target.value)}
               placeholder={placeholder}
               disabled={isDisabled}
-              className="flex-1 bg-transparent text-rezzy-white text-sm
-                       focus:outline-none placeholder:text-rezzy-gray-dark
-                       disabled:opacity-50 caret-rezzy-green min-h-[44px]"
+              className="flex-1 bg-transparent text-rezzy-ink text-sm
+                       focus:outline-none placeholder:text-rezzy-ink-light
+                       disabled:opacity-50 caret-rezzy-sage min-h-[44px]"
               autoComplete={state === "awaiting_email" ? "email" : "off"}
             />
+            <button
+              type="submit"
+              disabled={isDisabled}
+              className="w-10 h-10 bg-rezzy-sage text-white rounded-full flex items-center justify-center
+                       hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:hover:scale-100"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
           </div>
           {errorMessage && (
-            <p className="text-red-400 text-xs mt-2 px-1">{errorMessage}</p>
+            <p className="text-rezzy-coral text-xs mt-2 px-1">{errorMessage}</p>
           )}
         </form>
 
@@ -142,10 +153,10 @@ const ChatInputMobile = forwardRef<HTMLInputElement, InputVariantProps>(
               <button
                 key={suggestion}
                 onClick={() => onSuggestionClick(suggestion)}
-                className="text-rezzy-gray hover:text-rezzy-green text-xs
-                         border border-rezzy-gray-dark hover:border-rezzy-green/50
-                         px-2 py-1 rounded-lg transition-all duration-200
-                         hover:bg-rezzy-green/5 min-h-[44px] flex items-center"
+                className="text-rezzy-ink-muted hover:text-rezzy-sage text-xs
+                         bg-white border border-rezzy-cream-deep hover:border-rezzy-sage
+                         px-3 py-1.5 rounded-full transition-all duration-200
+                         hover:bg-rezzy-sage-pale min-h-[44px] flex items-center"
               >
                 {suggestion}
               </button>
@@ -179,8 +190,8 @@ const TerminalInput = forwardRef<HTMLInputElement, InputVariantProps>(
     return (
       <>
         <form onSubmit={onSubmit} className="mt-4">
-          <div className="flex items-center gap-2">
-            <span className="text-rezzy-green font-mono text-sm">→</span>
+          <div className="flex items-center gap-2 bg-rezzy-cream rounded-full px-4 py-2">
+            <span className="text-rezzy-sage font-mono text-sm">→</span>
             <input
               ref={ref}
               type={state === "awaiting_email" ? "email" : "text"}
@@ -188,21 +199,32 @@ const TerminalInput = forwardRef<HTMLInputElement, InputVariantProps>(
               onChange={(e) => onChange(e.target.value)}
               placeholder={placeholder}
               disabled={isDisabled}
-              className="flex-1 bg-transparent text-rezzy-white font-mono text-sm
-                       focus:outline-none placeholder:text-rezzy-gray-dark
-                       disabled:opacity-50 caret-rezzy-green"
+              className="flex-1 bg-transparent text-rezzy-ink font-mono text-sm
+                       focus:outline-none placeholder:text-rezzy-ink-light
+                       disabled:opacity-50 caret-rezzy-sage"
               autoComplete={state === "awaiting_email" ? "email" : "off"}
             />
             {!isDisabled && value.length === 0 && (
               <span
-                className={`w-2 h-4 bg-rezzy-green transition-opacity duration-100 ${
+                className={`w-2 h-4 bg-rezzy-sage rounded transition-opacity duration-100 ${
                   cursorVisible ? "opacity-100" : "opacity-0"
                 }`}
               />
             )}
+            <button
+              type="submit"
+              disabled={isDisabled}
+              className="w-8 h-8 bg-rezzy-sage text-white rounded-full flex items-center justify-center
+                       hover:scale-105 transition-transform duration-200 disabled:opacity-50 disabled:hover:scale-100"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
           </div>
           {errorMessage && (
-            <p className="text-red-400 text-xs font-mono mt-2 pl-4">
+            <p className="text-rezzy-coral text-xs font-mono mt-2 pl-4">
               {errorMessage}
             </p>
           )}
@@ -215,9 +237,9 @@ const TerminalInput = forwardRef<HTMLInputElement, InputVariantProps>(
               <button
                 key={suggestion}
                 onClick={() => onSuggestionClick(suggestion)}
-                className="text-rezzy-gray hover:text-rezzy-green font-mono text-xs
-                         border border-rezzy-gray-dark hover:border-rezzy-green/50
-                         px-3 py-1.5 transition-all duration-200 hover:bg-rezzy-green/5"
+                className="text-rezzy-ink-muted hover:text-rezzy-sage font-mono text-xs
+                         bg-white border border-rezzy-cream-deep hover:border-rezzy-sage
+                         px-3 py-1.5 rounded-full transition-all duration-200 hover:bg-rezzy-sage-pale"
               >
                 {suggestion}
               </button>

@@ -316,12 +316,12 @@ const InteractiveDemo = () => {
     if (variant === "chat") {
       return (
         <div className="flex justify-start">
-          <div className="bg-rezzy-off-black rounded-2xl px-4 py-3 max-w-[85%]">
+          <div className="bg-rezzy-sage-pale rounded-2xl px-4 py-3 max-w-[85%]">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-rezzy-green rounded-full animate-pulse" />
-              <span className="text-rezzy-green text-xs font-medium">REZZY</span>
+              <div className="w-2 h-2 bg-rezzy-sage rounded-full animate-pulse" />
+              <span className="text-rezzy-sage text-xs font-medium">REZZY</span>
             </div>
-            <p className="text-rezzy-gray-light text-sm whitespace-pre-wrap">
+            <p className="text-rezzy-ink text-sm whitespace-pre-wrap">
               {streamingContent}
             </p>
           </div>
@@ -332,14 +332,14 @@ const InteractiveDemo = () => {
     return (
       <div className="font-mono text-sm leading-relaxed mt-2">
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-2 h-2 bg-rezzy-green animate-pulse" />
-          <span className="text-rezzy-green text-xs tracking-wider">REZZY</span>
-          <span className="text-rezzy-gray text-xs">processing...</span>
+          <div className="w-2 h-2 bg-rezzy-sage rounded-full animate-pulse" />
+          <span className="text-rezzy-sage text-xs tracking-wider">REZZY</span>
+          <span className="text-rezzy-ink-muted text-xs">processing...</span>
         </div>
-        <pre className="text-rezzy-gray-light whitespace-pre-wrap pl-4">
+        <pre className="text-rezzy-ink whitespace-pre-wrap pl-4">
           {streamingContent}
           <span
-            className={`inline-block w-2 h-4 bg-rezzy-green ml-0.5 align-middle transition-opacity duration-100 ${
+            className={`inline-block w-2 h-4 bg-rezzy-sage rounded ml-0.5 align-middle transition-opacity duration-100 ${
               cursorVisible ? "opacity-100" : "opacity-0"
             }`}
           />
@@ -391,12 +391,12 @@ const InteractiveDemo = () => {
   if (variant === "chat") {
     return (
       <div className="relative">
-        <div className="bg-rezzy-off-black border border-rezzy-gray-dark rounded-xl overflow-hidden">
+        <div className="bg-white border border-rezzy-cream-deep rounded-3xl shadow-lg overflow-hidden">
           {renderContent()}
 
           {/* Footer with remaining queries */}
-          <div className="px-4 py-2 bg-rezzy-dark/50 border-t border-rezzy-gray-dark flex justify-between items-center">
-            <span className="text-rezzy-gray text-xs">
+          <div className="px-4 py-2 bg-rezzy-cream border-t border-rezzy-cream-deep flex justify-between items-center">
+            <span className="text-rezzy-ink-muted text-xs">
               {state === "thinking"
                 ? "Thinking..."
                 : state === "streaming"
@@ -404,24 +404,24 @@ const InteractiveDemo = () => {
                 : "Ready"}
             </span>
             {remaining !== null && remaining > 0 && (
-              <span className="text-rezzy-green text-xs">
+              <span className="text-rezzy-sage text-xs font-medium">
                 {remaining} free {remaining === 1 ? "question" : "questions"} left
               </span>
             )}
             {remaining === 0 && (
-              <span className="text-rezzy-gray-dark text-xs">Sign up for unlimited</span>
+              <span className="text-rezzy-ink-light text-xs">Sign up for unlimited</span>
             )}
           </div>
         </div>
 
         {/* Trust badges */}
-        <div className="mt-4 flex items-center justify-center gap-4 text-rezzy-gray text-xs">
+        <div className="mt-4 flex items-center justify-center gap-4 text-rezzy-ink-muted text-xs">
           <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 bg-rezzy-green rounded-full" />
+            <span className="w-1.5 h-1.5 bg-rezzy-sage rounded-full" />
             Evidence-based
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 bg-rezzy-green rounded-full" />
+            <span className="w-1.5 h-1.5 bg-rezzy-sage rounded-full" />
             HIPAA compliant
           </span>
         </div>
@@ -437,17 +437,17 @@ const InteractiveDemo = () => {
       </TerminalChrome>
 
       {/* Trust badges */}
-      <div className="mt-4 flex items-center justify-center gap-4 text-rezzy-gray text-xs font-mono">
+      <div className="mt-4 flex items-center justify-center gap-4 text-rezzy-ink-muted text-xs font-mono">
         <span className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 bg-rezzy-green" />
+          <span className="w-1.5 h-1.5 bg-rezzy-sage rounded-full" />
           Evidence-based
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 bg-rezzy-green" />
+          <span className="w-1.5 h-1.5 bg-rezzy-sage rounded-full" />
           HIPAA compliant
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 bg-rezzy-green" />
+          <span className="w-1.5 h-1.5 bg-rezzy-sage rounded-full" />
           Instant answers
         </span>
       </div>

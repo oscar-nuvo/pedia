@@ -16,7 +16,7 @@ const LandingHeader = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "bg-rezzy-black/95 backdrop-blur-sm border-b border-rezzy-gray-dark/50"
+          ? "bg-rezzy-cream/95 backdrop-blur-sm border-b border-rezzy-ink-light/20"
           : "bg-transparent"
       }`}
     >
@@ -29,11 +29,11 @@ const LandingHeader = () => {
           >
             {/* Logo mark - a simple but distinctive shape */}
             <div className="relative w-8 h-8">
-              <div className="absolute inset-0 bg-rezzy-green" />
-              <div className="absolute top-1 left-1 w-3 h-3 bg-rezzy-black" />
+              <div className="absolute inset-0 bg-rezzy-sage" />
+              <div className="absolute top-1 left-1 w-3 h-3 bg-rezzy-cream" />
             </div>
-            <span className="text-rezzy-white font-semibold text-xl tracking-tight group-hover:text-rezzy-green transition-colors duration-300">
-              REZZY
+            <span className="text-rezzy-ink font-semibold text-xl tracking-tight group-hover:text-rezzy-sage transition-colors duration-300">
+              Rezzy
             </span>
           </Link>
 
@@ -41,13 +41,13 @@ const LandingHeader = () => {
           <nav className="hidden md:flex items-center gap-8">
             <a
               href="#features"
-              className="text-rezzy-gray-light hover:text-rezzy-white text-sm font-medium transition-colors duration-300"
+              className="text-rezzy-ink-muted hover:text-rezzy-ink text-sm font-medium transition-colors duration-300"
             >
               Features
             </a>
             <a
               href="#how-it-works"
-              className="text-rezzy-gray-light hover:text-rezzy-white text-sm font-medium transition-colors duration-300"
+              className="text-rezzy-ink-muted hover:text-rezzy-ink text-sm font-medium transition-colors duration-300"
             >
               How it works
             </a>
@@ -57,13 +57,13 @@ const LandingHeader = () => {
           <div className="flex items-center gap-4">
             <Link
               to="/auth"
-              className="hidden md:inline text-rezzy-gray-light hover:text-rezzy-white text-sm font-medium transition-colors duration-300"
+              className="hidden md:inline text-rezzy-ink-muted hover:text-rezzy-ink hover:bg-rezzy-cream-warm px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-300"
             >
               Log in
             </Link>
             <Link
               to="/auth"
-              className="relative group bg-rezzy-green text-rezzy-black text-sm font-semibold px-5 py-2.5 transition-all duration-300 hover:bg-rezzy-white"
+              className="relative group bg-rezzy-sage text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 hover:bg-rezzy-sage-light"
             >
               <span className="relative z-10">Get Started</span>
             </Link>
