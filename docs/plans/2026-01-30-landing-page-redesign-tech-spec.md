@@ -59,9 +59,310 @@ TASK-7 (Integration Testing) ─── depends on all above
 
 ---
 
+## Acceptance Test Checklist
+
+These are the **mandatory acceptance tests** that must pass before the feature is considered complete. Each test has explicit steps and expected outcomes.
+
+---
+
+### TEST 1: Mobile vs Desktop Layout Differentiation
+
+**Purpose**: Verify that mobile and desktop render distinctly different UI experiences.
+
+#### TEST 1A: Desktop Terminal Experience
+```
+SETUP: Open Chrome, set viewport to 1280x800 (or any width ≥ 768px)
+NAVIGATE: Go to / (landing page)
+
+VERIFY DESKTOP LAYOUT:
+[ ] Hero shows two-column layout (headline left, demo right)
+[ ] Headline is stacked: "Your" / "unfair" / "advantage." on separate lines
+[ ] Subheadline visible: "Evidence-based answers in seconds..."
+[ ] Stats row visible: "2 min", "47", "∞"
+[ ] Demo has terminal chrome:
+    [ ] Traffic lights (red, yellow, green circles) in header
+    [ ] "rezzy.terminal" title in header
+    [ ] Scanline effect animating across terminal
+    [ ] Blinking cursor in input area
+[ ] User messages show with "→" prefix
+[ ] Rezzy messages show with green "REZZY" label
+[ ] Thinking indicator shows rotating phrases ("Consulting references...", etc.)
+[ ] Footer shows "Ready" status and "X free questions remaining"
+```
+
+#### TEST 1B: Mobile Chat Experience
+```
+SETUP: Open Chrome DevTools, set viewport to 375x667 (iPhone SE)
+NAVIGATE: Go to / (landing page)
+
+VERIFY MOBILE LAYOUT:
+[ ] Demo visible without scrolling (within 80% of viewport height from top)
+[ ] Headline shows as single line: "Your unfair advantage."
+[ ] Subheadline NOT visible in initial view
+[ ] Stats row NOT visible in initial view
+[ ] Demo has NO terminal chrome:
+    [ ] NO traffic lights
+    [ ] NO "rezzy.terminal" header
+    [ ] NO scanline effect
+    [ ] NO blinking cursor
+[ ] User messages are right-aligned bubbles with rounded corners
+[ ] Rezzy messages are left-aligned bubbles with rounded corners
+[ ] Thinking indicator shows ONLY three animated dots (no rotating text)
+[ ] Suggestion chips have visible borders, are easily tappable (44px+ height)
+[ ] "X free questions remaining" visible
+[ ] Input field at bottom of demo component
+```
+
+#### TEST 1C: Responsive Transition
+```
+SETUP: Open page at desktop width (1280px)
+ACTION: Slowly drag browser width from 1280px → 375px
+
+VERIFY:
+[ ] At 768px breakpoint, layout switches from terminal to chat
+[ ] No visual glitches during transition
+[ ] No content loss during transition
+[ ] If mid-conversation, messages remain visible (state preserved)
+```
+
+---
+
+### TEST 2: Demo Query Flow (Email Validation + Response)
+
+**Purpose**: Verify the complete demo interaction from question to AI response.
+
+#### TEST 2A: First Question + Email Capture
+```
+SETUP: Clear localStorage (DevTools > Application > Clear site data)
+NAVIGATE: Go to / (landing page)
+
+STEP 1 - Ask a question:
+ACTION: Type "What is the dosing for amoxicillin in a 15kg child?" and press Enter
+VERIFY:
+[ ] User message appears (bubble on mobile, → prefix on desktop)
+[ ] Rezzy responds: "Good question. Drop your email and I'll pull up the answer."
+[ ] Input placeholder changes to "Enter your email..."
+
+STEP 2 - Invalid email:
+ACTION: Type "notanemail" and press Enter
+VERIFY:
+[ ] Error message appears: "That email doesn't look right. Try again?"
+[ ] User can re-enter email (input not disabled)
+
+STEP 3 - Valid email:
+ACTION: Type "test@example.com" and press Enter
+VERIFY:
+[ ] Email message appears in conversation
+[ ] "Checking..." message appears briefly
+[ ] Thinking indicator shows (dots on mobile, rotating phrases on desktop)
+[ ] Response streams in character by character
+[ ] After response complete, shows "2 free questions remaining"
+[ ] localStorage now contains rezzy_demo_session with email
+```
+
+#### TEST 2B: Subsequent Questions (Email Remembered)
+```
+SETUP: Continue from TEST 2A (email already captured)
+
+ACTION: Type "What are the red flags for fever in an infant?" and press Enter
+VERIFY:
+[ ] NO email prompt (email remembered from session)
+[ ] Thinking indicator shows immediately
+[ ] Response streams
+[ ] Shows "1 free question remaining" after response
+```
+
+---
+
+### TEST 3: Demo Exhaustion → Auth Redirect
+
+**Purpose**: Verify that after 3 questions, user is redirected to signup.
+
+```
+SETUP: Clear localStorage, complete TEST 2A and 2B (2 questions used)
+
+ACTION: Ask a third question: "Differential for pediatric chest pain?"
+VERIFY:
+[ ] Response streams normally
+[ ] After response, shows "You've used your 3 free questions. Ready for unlimited access?"
+[ ] After ~2 seconds, automatically redirects to /auth
+
+ON AUTH PAGE:
+[ ] URL is /auth?email=test@example.com (email in query param)
+[ ] Email field is pre-filled with "test@example.com"
+[ ] Context line shows: "You asked 3 questions. Keep going."
+[ ] Signup form is displayed (not sign-in)
+```
+
+#### TEST 3B: Returning Exhausted User
+```
+SETUP: localStorage has rezzy_demo_session with remaining=0, email="test@example.com"
+
+NAVIGATE: Go to / (landing page)
+VERIFY:
+[ ] Demo shows: "Welcome back! You've used your 3 free questions..."
+[ ] Input placeholder shows: "Press Enter to sign up..."
+
+ACTION: Press Enter
+VERIFY:
+[ ] Redirects to /auth?email=test@example.com
+```
+
+---
+
+### TEST 4: Auth Page Functionality
+
+**Purpose**: Verify signup and login work correctly with dark theme.
+
+#### TEST 4A: Auth Page Visual Verification
+```
+NAVIGATE: Go to /auth
+
+VERIFY DARK THEME:
+[ ] Background is black (#000000)
+[ ] Input fields have dark background with visible borders
+[ ] CTA button is bright green (#39FF14) with black text
+[ ] REZZY logo visible at top
+[ ] Trust badges visible: "✓ No credit card • ✓ Cancel anytime"
+```
+
+#### TEST 4B: Signup Flow
+```
+NAVIGATE: Go to /auth?email=newuser@example.com
+
+VERIFY INITIAL STATE:
+[ ] Signup form displayed (not sign-in)
+[ ] Email field pre-filled with "newuser@example.com"
+[ ] "Already have an account? Sign in" link visible
+
+STEP 1 - Validation errors:
+ACTION: Leave First Name empty, click "Create Account"
+VERIFY: [ ] Error toast: "First name is required"
+
+ACTION: Fill First Name "Test", Last Name "User", Password "short"
+ACTION: Click "Create Account"
+VERIFY: [ ] Error toast: "Password must be at least 8 characters"
+
+STEP 2 - Successful signup:
+ACTION: Fill all fields correctly:
+  - First Name: "Test"
+  - Last Name: "User"
+  - Email: "newuser@example.com"
+  - Password: "SecurePass123"
+ACTION: Click "Create Account"
+VERIFY:
+[ ] Button shows "Creating account..." while loading
+[ ] Success toast: "Account created successfully!"
+[ ] (If email verification required) Toast mentions checking email
+```
+
+#### TEST 4C: Sign In Flow
+```
+NAVIGATE: Go to /auth
+
+ACTION: Click "Already have an account? Sign in"
+VERIFY:
+[ ] Form swaps to sign-in view (no page navigation)
+[ ] URL remains /auth (no change)
+[ ] "Need an account? Sign up" link now visible
+
+STEP 1 - Invalid credentials:
+ACTION: Enter wrong email/password, click "Sign In"
+VERIFY: [ ] Error toast: "Invalid email or password"
+
+STEP 2 - Successful login:
+ACTION: Enter valid credentials for existing user
+ACTION: Click "Sign In"
+VERIFY:
+[ ] Button shows "Signing in..." while loading
+[ ] Success toast: "Welcome back!"
+[ ] Redirects to /onboarding (or /ai-copilot if onboarding complete)
+```
+
+#### TEST 4D: Form Toggle Persistence
+```
+NAVIGATE: Go to /auth (defaults to sign-in)
+ACTION: Click "Need an account? Sign up"
+VERIFY: [ ] Signup form shows
+
+ACTION: Click browser back button
+ACTION: Click browser forward button
+VERIFY: [ ] Form state may reset (acceptable) OR persist (bonus)
+
+NAVIGATE: Go to /auth?email=test@example.com
+VERIFY: [ ] Signup form shows (email param forces signup view)
+```
+
+#### TEST 4E: Mobile Auth Layout
+```
+SETUP: Set viewport to 375x667
+
+NAVIGATE: Go to /auth?email=test@example.com
+
+VERIFY MOBILE LAYOUT:
+[ ] First name and Last name fields are STACKED (not side-by-side)
+[ ] All form fields are full-width
+[ ] Content is top-aligned (not vertically centered)
+[ ] CTA button is easily tappable
+[ ] No horizontal scroll
+```
+
+---
+
+### TEST 5: Cross-Browser Verification
+
+**Purpose**: Ensure functionality works across target browsers.
+
+```
+BROWSERS TO TEST:
+[ ] Chrome (latest) - Desktop
+[ ] Firefox (latest) - Desktop
+[ ] Safari (latest) - Desktop
+[ ] Chrome (latest) - Android (real device or BrowserStack)
+[ ] Safari - iOS (real device or BrowserStack)
+
+FOR EACH BROWSER, VERIFY:
+[ ] TEST 1A or 1B passes (depending on viewport)
+[ ] TEST 2A passes (demo flow works)
+[ ] TEST 4B or 4C passes (auth works)
+[ ] No console errors
+[ ] No visual glitches
+```
+
+---
+
+### TEST 6: Performance Verification
+
+**Purpose**: Ensure page meets performance requirements.
+
+```
+SETUP: Chrome DevTools > Lighthouse > Mobile
+
+RUN LIGHTHOUSE AUDIT ON:
+1. / (landing page)
+2. /auth
+
+VERIFY:
+[ ] Landing page Performance score > 85
+[ ] Landing page Accessibility score > 90
+[ ] Auth page Performance score > 85
+[ ] Auth page Accessibility score > 90
+[ ] No major accessibility violations flagged
+
+NETWORK THROTTLING TEST:
+SETUP: DevTools > Network > Slow 3G
+
+NAVIGATE: Go to / (landing page)
+VERIFY:
+[ ] Page loads and is interactive within 5 seconds
+[ ] Demo is functional (can type, submit)
+```
+
+---
+
 ## UX Test Flows
 
-Before diving into tasks, here are the complete user flows to validate after implementation:
+Below are the narrative user flows (for reference). The Acceptance Test Checklist above provides the detailed verification steps.
 
 ### Flow 1: Mobile Happy Path (Demo → Signup)
 
