@@ -256,40 +256,43 @@ serve(async (req) => {
       return messages;
     };
 
-    // Enhanced tools for Responses API format
-    const tools = [
-      {
-        name: "calculate_pediatric_dosage",
-        type: "function",
-        description: "Calculate medication dosage for pediatric patients with safety checks",
-        parameters: {
-          type: "object",
-          properties: {
-            medication: { type: "string" },
-            weight_kg: { type: "number" },
-            age_years: { type: "number" },
-            indication: { type: "string" },
-            route: { type: "string", default: "oral" }
-          },
-          required: ["medication", "weight_kg", "age_years", "indication"]
-        }
-      },
-      {
-        name: "analyze_growth_chart",
-        type: "function",
-        description: "Analyze pediatric growth parameters and provide percentile estimates",
-        parameters: {
-          type: "object",
-          properties: {
-            height_cm: { type: "number" },
-            weight_kg: { type: "number" },
-            age_months: { type: "number" },
-            sex: { type: "string", enum: ["male", "female"] }
-          },
-          required: ["height_cm", "weight_kg", "age_months", "sex"]
-        }
-      }
-    ];
+    // Tools disabled - function calling requires submitting results back to OpenAI
+    // which isn't currently implemented. The model can still reason about dosages
+    // using its training data without needing to call external functions.
+    // TODO: Implement proper function calling with result submission if needed
+    // const tools = [
+    //   {
+    //     name: "calculate_pediatric_dosage",
+    //     type: "function",
+    //     description: "Calculate medication dosage for pediatric patients with safety checks",
+    //     parameters: {
+    //       type: "object",
+    //       properties: {
+    //         medication: { type: "string" },
+    //         weight_kg: { type: "number" },
+    //         age_years: { type: "number" },
+    //         indication: { type: "string" },
+    //         route: { type: "string", default: "oral" }
+    //       },
+    //       required: ["medication", "weight_kg", "age_years", "indication"]
+    //     }
+    //   },
+    //   {
+    //     name: "analyze_growth_chart",
+    //     type: "function",
+    //     description: "Analyze pediatric growth parameters and provide percentile estimates",
+    //     parameters: {
+    //       type: "object",
+    //       properties: {
+    //         height_cm: { type: "number" },
+    //         weight_kg: { type: "number" },
+    //         age_months: { type: "number" },
+    //         sex: { type: "string", enum: ["male", "female"] }
+    //       },
+    //       required: ["height_cm", "weight_kg", "age_months", "sex"]
+    //     }
+    //   }
+    // ];
 
     // Get previous response ID for conversation continuity (using already-fetched conversation)
     const previousResponseId = conversation?.metadata?.responseId;
@@ -313,7 +316,7 @@ serve(async (req) => {
           id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f"
         },
         input: openaiInput,
-        tools,
+        // tools disabled - see comment above
         stream: true,
         store: true,
         background: options.background || false,
