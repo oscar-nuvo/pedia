@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import RezzyLogo from '@/components/RezzyLogo';
 
 // Animation timing constants
@@ -59,39 +59,49 @@ export interface ThinkingIndicatorProps {
 const ThinkingIndicator = memo(function ThinkingIndicator({ visible }: ThinkingIndicatorProps) {
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [displayText, setDisplayText] = useState('');
-  const [isTyping, setIsTyping] = useState(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentPhrase = THINKING_PHRASES[phraseIndex];
 
-  // Typewriter effect
+  // Clear any pending timeout
+  const clearPendingTimeout = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  };
+
+  // Reset when hidden
   useEffect(() => {
     if (!visible) {
-      // Reset state when hidden
+      clearPendingTimeout();
       setDisplayText('');
       setPhraseIndex(0);
-      setIsTyping(true);
-      return;
+    }
+    return clearPendingTimeout;
+  }, [visible]);
+
+  // Typewriter effect
+  useEffect(() => {
+    if (!visible) return;
+
+    clearPendingTimeout();
+
+    if (displayText.length < currentPhrase.length) {
+      // Type next character
+      timeoutRef.current = setTimeout(() => {
+        setDisplayText(currentPhrase.slice(0, displayText.length + 1));
+      }, TYPING_SPEED_MS);
+    } else {
+      // Finished typing, hold then move to next phrase
+      timeoutRef.current = setTimeout(() => {
+        setDisplayText('');
+        setPhraseIndex((prev) => (prev + 1) % THINKING_PHRASES.length);
+      }, PHRASE_HOLD_MS);
     }
 
-    if (isTyping) {
-      if (displayText.length < currentPhrase.length) {
-        // Type next character
-        const timeout = setTimeout(() => {
-          setDisplayText(currentPhrase.slice(0, displayText.length + 1));
-        }, TYPING_SPEED_MS);
-        return () => clearTimeout(timeout);
-      } else {
-        // Finished typing, hold then move to next phrase
-        setIsTyping(false);
-        const timeout = setTimeout(() => {
-          setDisplayText('');
-          setPhraseIndex((prev) => (prev + 1) % THINKING_PHRASES.length);
-          setIsTyping(true);
-        }, PHRASE_HOLD_MS);
-        return () => clearTimeout(timeout);
-      }
-    }
-  }, [visible, displayText, currentPhrase, isTyping]);
+    return clearPendingTimeout;
+  }, [visible, displayText, currentPhrase]);
 
   if (!visible) return null;
 
