@@ -468,20 +468,24 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         break;
 
       case 'text_delta':
-        context.setAccumulatedContent(context.accumulatedContent + event.delta);
+        // Compute new value first, then update both state and context
+        const newContent = context.accumulatedContent + event.delta;
+        context.setAccumulatedContent(newContent);
         setStreamingState(prev => ({
           ...prev,
-          streamingMessage: context.accumulatedContent,
+          streamingMessage: newContent,
           progress: { type: 'text', status: 'Generating response...' }
         }));
         break;
 
       case 'reasoning_delta':
         if (streamingState.showReasoning) {
-          context.setAccumulatedReasoning(context.accumulatedReasoning + event.delta);
+          // Compute new value first, then update both state and context
+          const newReasoning = context.accumulatedReasoning + event.delta;
+          context.setAccumulatedReasoning(newReasoning);
           setStreamingState(prev => ({
             ...prev,
-            reasoningText: context.accumulatedReasoning,
+            reasoningText: newReasoning,
             progress: { type: 'reasoning', status: 'Thinking through the problem...' }
           }));
         }
@@ -548,20 +552,28 @@ export const useAdvancedAIChat = (conversationId?: string) => {
         break;
 
       case 'db_error':
-        console.log('Edge Function DB error, client fallback will handle:', event.details);
+        console.error('Edge Function DB error, client fallback will handle:', event.details);
         break;
 
       case 'response_complete':
         context.setReceivedResponseComplete(true);
-        
+
         // Keep message visible during database save
         setStreamingState(prev => ({
           ...prev,
           progress: { type: 'text', status: 'Finalizing response...' }
         }));
-        
+
         // Store the response for potential fallback
-        const finalContent = event.content || context.accumulatedContent || '';
+        // If no text content but we have reasoning, use that as fallback
+        let finalContent = event.content || context.accumulatedContent || '';
+        if (!finalContent.trim() && context.accumulatedReasoning?.trim()) {
+          console.error('Incomplete response: OpenAI returned reasoning but no text output', {
+            responseId: event.responseId,
+            reasoningLength: context.accumulatedReasoning.length
+          });
+          finalContent = `**System Notice: Incomplete Response**\n\nThe AI system was unable to complete its response. The partial reasoning below is provided for reference only and should not be used for clinical decision-making.\n\n---\n\n**Partial Reasoning:**\n${context.accumulatedReasoning.trim()}\n\n---\n\n**Recommended Actions:**\n1. Please rephrase your question and try again\n2. If this issue persists, contact technical support\n3. For urgent clinical decisions, consult standard medical references`;
+        }
         
         // Optimistically append the assistant message so it persists immediately
         try {
@@ -671,11 +683,6 @@ export const useAdvancedAIChat = (conversationId?: string) => {
             progress: undefined
           }));
         }, 1000);
-        break;
-
-      case 'db_error':
-        console.error('Database error from edge function:', event.details);
-        // The fallback will kick in after timeout, no need to do anything special here
         break;
 
       case 'stream_error':

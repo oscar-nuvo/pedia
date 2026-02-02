@@ -346,7 +346,25 @@ serve(async (req) => {
         let lineBuffer = '';
 
         const persistAssistantMessage = async () => {
-          if (!assistantContent.trim()) return;
+          // Handle edge case: OpenAI returned reasoning but no text output
+          if (!assistantContent.trim()) {
+            const trimmedReasoning = reasoningSummary.trim();
+            if (trimmedReasoning) {
+              // This is an error condition - OpenAI should produce output if it produces reasoning
+              console.error('ERROR: OpenAI returned reasoning but no text output', {
+                conversationId,
+                responseId: currentResponseId,
+                reasoningLength: trimmedReasoning.length
+              });
+              assistantContent = `**System Notice: Incomplete Response**\n\nThe AI system was unable to complete its response. The partial reasoning below is provided for reference only and should not be used for clinical decision-making.\n\n---\n\n**Partial Reasoning:**\n${trimmedReasoning}\n\n---\n\n**Recommended Actions:**\n1. Please rephrase your question and try again\n2. If this issue persists, contact technical support\n3. For urgent clinical decisions, consult standard medical references`;
+            } else {
+              console.error('ERROR: No content to persist - OpenAI returned empty response', {
+                conversationId,
+                responseId: currentResponseId
+              });
+              return;
+            }
+          }
 
           console.log('Persisting assistant message...', {
             conversationId,
