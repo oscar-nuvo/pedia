@@ -23,7 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const TITLE_MAX_LENGTH = 30;
+const TITLE_MAX_LENGTH = 36;
 
 const truncateTitle = (title: string, maxLength: number = TITLE_MAX_LENGTH): string => {
   if (title.length <= maxLength) return title;
