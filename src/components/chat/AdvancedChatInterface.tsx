@@ -17,10 +17,18 @@ import {
   Trash2
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useAdvancedAIChat, AdvancedMessage, FunctionCall, Citation } from "@/hooks/useAdvancedAIChat";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+const TITLE_MAX_LENGTH = 30;
+
+const truncateTitle = (title: string, maxLength: number = TITLE_MAX_LENGTH): string => {
+  if (title.length <= maxLength) return title;
+  return title.slice(0, maxLength).trimEnd() + '...';
+};
 
 const AdvancedChatInterface = () => {
   const { user } = useAuth();
@@ -150,8 +158,8 @@ const AdvancedChatInterface = () => {
   return (
     <div className="flex h-screen w-full bg-white">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-200 overflow-hidden border-r border-rezzy-cream-deep bg-rezzy-cream/30`}>
-        <div className="w-64 h-full flex flex-col">
+      <div className={`${sidebarOpen ? 'w-[280px]' : 'w-0'} transition-all duration-200 overflow-hidden border-r border-rezzy-cream-deep bg-rezzy-cream/30`}>
+        <div className="w-[280px] h-full flex flex-col">
           {/* Sidebar Header */}
           <div className="p-4 flex items-center justify-between">
             <span className="text-sm font-medium text-rezzy-ink-muted">Conversations</span>
@@ -167,55 +175,77 @@ const AdvancedChatInterface = () => {
 
           {/* Conversations List */}
           <ScrollArea className="flex-1">
-            <div className="px-2 space-y-0.5">
-              {conversationsLoading ? (
-                <p className="px-3 py-2 text-sm text-rezzy-ink-light">Loading...</p>
-              ) : conversations.length === 0 ? (
-                <p className="px-3 py-2 text-sm text-rezzy-ink-light">No conversations</p>
-              ) : (
-                conversations.map((conversation) => (
-                  <div key={conversation.id} className="group flex items-center">
-                    <button
-                      onClick={() => selectConversation(conversation.id)}
-                      className={`flex-1 text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                        currentConversationId === conversation.id
-                          ? 'bg-white text-rezzy-ink shadow-sm'
-                          : 'text-rezzy-ink-muted hover:bg-white/50'
-                      }`}
-                    >
-                      <p className="truncate font-medium">{conversation.title}</p>
-                      <p className="text-xs text-rezzy-ink-light mt-0.5">
-                        {format(new Date(conversation.updated_at), 'MMM d')}
-                      </p>
-                    </button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <button className="p-1.5 opacity-0 group-hover:opacity-100 text-rezzy-ink-light hover:text-rezzy-coral transition-all">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete "{conversation.title}" and all its messages.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteConversation(conversation.id)}
-                            className="bg-rezzy-coral text-white hover:bg-rezzy-coral/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                ))
-              )}
-            </div>
+            <TooltipProvider>
+              <div className="px-2 space-y-0.5">
+                {conversationsLoading ? (
+                  <p className="px-3 py-2 text-sm text-rezzy-ink-light">Loading...</p>
+                ) : conversations.length === 0 ? (
+                  <p className="px-3 py-2 text-sm text-rezzy-ink-light">No conversations</p>
+                ) : (
+                  conversations.map((conversation) => {
+                    const isTruncated = conversation.title.length > TITLE_MAX_LENGTH;
+                    const displayTitle = truncateTitle(conversation.title);
+
+                    const conversationButton = (
+                      <button
+                        onClick={() => selectConversation(conversation.id)}
+                        className={`flex-1 text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                          currentConversationId === conversation.id
+                            ? 'bg-white text-rezzy-ink shadow-sm'
+                            : 'text-rezzy-ink-muted hover:bg-white/50'
+                        }`}
+                      >
+                        <p className="font-medium">{displayTitle}</p>
+                        <p className="text-xs text-rezzy-ink-light mt-0.5">
+                          {format(new Date(conversation.updated_at), 'MMM d')}
+                        </p>
+                      </button>
+                    );
+
+                    return (
+                      <div key={conversation.id} className="group flex items-center">
+                        {isTruncated ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              {conversationButton}
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="max-w-[300px]">
+                              <p>{conversation.title}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          conversationButton
+                        )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button className="p-2 ml-2 opacity-0 group-hover:opacity-100 text-rezzy-ink-light hover:text-rezzy-coral transition-all">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete "{conversation.title}" and all its messages.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteConversation(conversation.id)}
+                                className="bg-rezzy-coral text-white hover:bg-rezzy-coral/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </TooltipProvider>
           </ScrollArea>
         </div>
       </div>
