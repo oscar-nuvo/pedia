@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useAdvancedAIChat, AdvancedMessage, FunctionCall, Citation } from "@/hooks/useAdvancedAIChat";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -32,6 +33,7 @@ const truncateTitle = (title: string, maxLength: number = TITLE_MAX_LENGTH): str
 
 const AdvancedChatInterface = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +43,13 @@ const AdvancedChatInterface = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const { toast } = useToast();
+
+  // Default sidebar closed on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
 
   const {
     conversations,
@@ -139,6 +148,14 @@ const AdvancedChatInterface = () => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Auto-close sidebar on mobile when selecting conversation
+  const handleSelectConversation = useCallback((id: string) => {
+    selectConversation(id);
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [selectConversation, isMobile]);
+
   if (!user) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -158,18 +175,18 @@ const AdvancedChatInterface = () => {
   return (
     <div className="flex h-screen w-full bg-white">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-[280px]' : 'w-0'} transition-all duration-200 overflow-hidden border-r border-rezzy-cream-deep bg-rezzy-cream/30`}>
+      <div className={`${sidebarOpen ? 'w-[280px]' : 'w-0'} transition-all duration-200 overflow-hidden border-r border-rezzy-cream-deep bg-rezzy-cream/30 flex-shrink-0`}>
         <div className="w-[280px] h-full flex flex-col">
           {/* Sidebar Header */}
-          <div className="p-4 flex items-center justify-between">
+          <div className="p-3 md:p-4 flex items-center justify-between">
             <span className="text-sm font-medium text-rezzy-ink-muted">Conversations</span>
             <Button
               size="sm"
               variant="ghost"
               onClick={startNewConversation}
-              className="h-8 w-8 p-0 text-rezzy-ink-muted hover:text-rezzy-ink hover:bg-rezzy-cream"
+              className="h-11 w-11 md:h-8 md:w-8 p-0 text-rezzy-ink-muted hover:text-rezzy-ink hover:bg-rezzy-cream"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5 md:w-4 md:h-4" />
             </Button>
           </div>
 
@@ -188,8 +205,8 @@ const AdvancedChatInterface = () => {
 
                     const conversationButton = (
                       <button
-                        onClick={() => selectConversation(conversation.id)}
-                        className={`flex-1 text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                        onClick={() => handleSelectConversation(conversation.id)}
+                        className={`flex-1 text-left px-3 py-2.5 md:py-2 rounded-lg text-sm transition-colors ${
                           currentConversationId === conversation.id
                             ? 'bg-white text-rezzy-ink shadow-sm'
                             : 'text-rezzy-ink-muted hover:bg-white/50'
@@ -218,8 +235,8 @@ const AdvancedChatInterface = () => {
                         )}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <button className="p-2 ml-2 opacity-0 group-hover:opacity-100 text-rezzy-ink-light hover:text-rezzy-coral transition-all">
-                              <Trash2 className="w-3.5 h-3.5" />
+                            <button className="p-2.5 md:p-2 ml-1 md:ml-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-rezzy-ink-light hover:text-rezzy-coral transition-all min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center">
+                              <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
                             </button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -253,40 +270,40 @@ const AdvancedChatInterface = () => {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header - Minimal */}
-        <div className="h-14 px-4 flex items-center gap-3 border-b border-rezzy-cream-deep">
+        <div className="h-14 px-3 md:px-4 flex items-center gap-2 md:gap-3 border-b border-rezzy-cream-deep">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 -ml-2 text-rezzy-ink-muted hover:text-rezzy-ink rounded-lg hover:bg-rezzy-cream transition-colors"
+            className="p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 -ml-1 md:-ml-2 text-rezzy-ink-muted hover:text-rezzy-ink rounded-lg hover:bg-rezzy-cream transition-colors flex items-center justify-center"
           >
             {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          <div className="flex items-center gap-2">
-            <RezzyLogo size={28} />
-            <span className="font-display font-semibold text-rezzy-ink">Rezzy</span>
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <RezzyLogo size={isMobile ? 24 : 28} />
+            <span className="font-display font-semibold text-rezzy-ink text-sm md:text-base">Rezzy</span>
           </div>
 
           <div className="ml-auto flex items-center gap-1">
             {streamingState.showReasoning && (
-              <span className="text-xs text-rezzy-ink-light mr-2">Reasoning visible</span>
+              <span className="hidden md:inline text-xs text-rezzy-ink-light mr-2">Reasoning visible</span>
             )}
             <button
               onClick={toggleReasoning}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 rounded-lg transition-colors flex items-center justify-center ${
                 streamingState.showReasoning
                   ? 'bg-rezzy-sage-pale text-rezzy-sage'
                   : 'text-rezzy-ink-light hover:text-rezzy-ink hover:bg-rezzy-cream'
               }`}
             >
-              <Brain className="w-4 h-4" />
+              <Brain className="w-5 h-5 md:w-4 md:h-4" />
             </button>
 
             {streamingState.isStreaming && (
               <button
                 onClick={stopStreaming}
-                className="p-2 text-rezzy-coral hover:bg-rezzy-coral-pale rounded-lg transition-colors"
+                className="p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-rezzy-coral hover:bg-rezzy-coral-pale rounded-lg transition-colors flex items-center justify-center"
               >
-                <StopCircle className="w-4 h-4" />
+                <StopCircle className="w-5 h-5 md:w-4 md:h-4" />
               </button>
             )}
           </div>
@@ -294,7 +311,7 @@ const AdvancedChatInterface = () => {
 
         {/* Messages Area */}
         <ScrollArea className="flex-1">
-          <div className="max-w-3xl mx-auto py-8">
+          <div className="max-w-3xl mx-auto py-4 md:py-8 px-3 md:px-4">
             {/* Welcome State */}
             {messages.length === 0 && !streamingState.streamingMessage && !showThinkingIndicator && (
               <div className="px-4 py-16 text-center">
@@ -316,6 +333,7 @@ const AdvancedChatInterface = () => {
                 key={message.id}
                 message={message}
                 showReasoning={streamingState.showReasoning}
+                isMobile={isMobile}
               />
             ))}
 
@@ -324,10 +342,10 @@ const AdvancedChatInterface = () => {
 
             {/* Streaming message */}
             {streamingState.streamingMessage && (
-              <div className="px-4 py-6">
-                <div className="flex gap-3">
-                  <div className="w-7 h-7 flex-shrink-0">
-                    <RezzyLogo size={28} />
+              <div className="py-4 md:py-6">
+                <div className="flex gap-2 md:gap-3">
+                  <div className="w-6 h-6 md:w-7 md:h-7 flex-shrink-0">
+                    <RezzyLogo size={isMobile ? 24 : 28} />
                   </div>
                   <div className="flex-1 min-w-0">
                     {/* Reasoning */}
@@ -379,18 +397,21 @@ const AdvancedChatInterface = () => {
         </ScrollArea>
 
         {/* Input Area - Clean and minimal */}
-        <div className="border-t border-rezzy-cream-deep bg-white">
-          <div className="max-w-3xl mx-auto p-4">
+        <div
+          className="border-t border-rezzy-cream-deep bg-white"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        >
+          <div className="max-w-3xl mx-auto p-3 md:p-4">
             {/* File attachments */}
             {selectedFiles.length > 0 && (
-              <div className="mb-3 flex flex-wrap gap-2">
+              <div className="mb-2 md:mb-3 flex flex-wrap gap-1.5 md:gap-2">
                 {selectedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center gap-2 bg-rezzy-cream rounded-full px-3 py-1.5 text-sm text-rezzy-ink-muted">
+                  <div key={index} className="flex items-center gap-1.5 md:gap-2 bg-rezzy-cream rounded-full px-2.5 md:px-3 py-1 md:py-1.5 text-xs md:text-sm text-rezzy-ink-muted">
                     <Paperclip className="w-3 h-3" />
-                    <span className="truncate max-w-[120px]">{file.name}</span>
+                    <span className="truncate max-w-[100px] md:max-w-[120px]">{file.name}</span>
                     <button
                       onClick={() => removeFile(index)}
-                      className="text-rezzy-ink-light hover:text-rezzy-ink"
+                      className="text-rezzy-ink-light hover:text-rezzy-ink p-1 min-w-[24px] min-h-[24px] flex items-center justify-center"
                     >
                       ×
                     </button>
@@ -399,7 +420,7 @@ const AdvancedChatInterface = () => {
               </div>
             )}
 
-            <div className="flex items-end gap-3">
+            <div className="flex items-end gap-2 md:gap-3">
               <div className="flex-1 relative">
                 <Textarea
                   ref={textareaRef}
@@ -408,12 +429,12 @@ const AdvancedChatInterface = () => {
                   onKeyDown={handleKeyDown}
                   placeholder="Ask anything..."
                   disabled={isSendingMessage || streamingState.isStreaming}
-                  className="min-h-[48px] max-h-32 resize-none border-rezzy-cream-deep bg-rezzy-cream/30
-                           text-rezzy-ink placeholder:text-rezzy-ink-light rounded-2xl pr-12
-                           focus:border-rezzy-sage focus:ring-1 focus:ring-rezzy-sage/20"
+                  className="min-h-[44px] md:min-h-[48px] max-h-32 resize-none border-rezzy-cream-deep bg-rezzy-cream/30
+                           text-rezzy-ink placeholder:text-rezzy-ink-light rounded-2xl pr-11 md:pr-12
+                           focus:border-rezzy-sage focus:ring-1 focus:ring-rezzy-sage/20 text-base"
                   rows={1}
                 />
-                <div className="absolute right-2 bottom-2">
+                <div className="absolute right-1.5 md:right-2 bottom-1.5 md:bottom-2">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -424,18 +445,18 @@ const AdvancedChatInterface = () => {
                   />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 text-rezzy-ink-light hover:text-rezzy-ink rounded-lg hover:bg-rezzy-cream transition-colors"
+                    className="p-2 min-w-[40px] min-h-[40px] md:min-w-0 md:min-h-0 text-rezzy-ink-light hover:text-rezzy-ink rounded-lg hover:bg-rezzy-cream transition-colors flex items-center justify-center"
                   >
-                    <Paperclip className="w-4 h-4" />
+                    <Paperclip className="w-5 h-5 md:w-4 md:h-4" />
                   </button>
                 </div>
               </div>
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputMessage.trim() || isSendingMessage || streamingState.isStreaming}
-                className="h-12 w-12 rounded-full p-0 bg-rezzy-sage hover:bg-rezzy-sage-light text-white shadow-none"
+                className="h-11 w-11 md:h-12 md:w-12 rounded-full p-0 bg-rezzy-sage hover:bg-rezzy-sage-light text-white shadow-none flex-shrink-0"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5 md:w-4 md:h-4" />
               </Button>
             </div>
           </div>
@@ -448,25 +469,27 @@ const AdvancedChatInterface = () => {
 // Clean message bubble
 const MessageBubble = ({
   message,
-  showReasoning
+  showReasoning,
+  isMobile
 }: {
   message: AdvancedMessage;
   showReasoning: boolean;
+  isMobile: boolean;
 }) => {
   const isUser = message.role === "user";
   const [expandReasoning, setExpandReasoning] = useState(false);
 
   return (
-    <div className="px-4 py-6">
-      <div className="flex gap-3">
+    <div className="py-4 md:py-6">
+      <div className="flex gap-2 md:gap-3">
         {/* Avatar */}
         {isUser ? (
-          <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center bg-rezzy-ink text-white text-xs font-medium">
+          <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg flex-shrink-0 flex items-center justify-center bg-rezzy-ink text-white text-[10px] md:text-xs font-medium">
             Y
           </div>
         ) : (
-          <div className="w-7 h-7 flex-shrink-0">
-            <RezzyLogo size={28} />
+          <div className="w-6 h-6 md:w-7 md:h-7 flex-shrink-0">
+            <RezzyLogo size={isMobile ? 24 : 28} />
           </div>
         )}
 
