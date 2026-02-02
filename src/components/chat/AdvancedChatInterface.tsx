@@ -18,13 +18,14 @@ import {
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { useAdvancedAIChat, AdvancedMessage, FunctionCall, Citation } from "@/hooks/useAdvancedAIChat";
+import { useAdvancedAIChat, AdvancedMessage, FunctionCall, Citation, StreamingState, ConversationState } from "@/hooks/useAdvancedAIChat";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const TITLE_MAX_LENGTH = 36;
+const TOUCH_TARGET_CLASSES = "min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center";
 
 const truncateTitle = (title: string, maxLength: number = TITLE_MAX_LENGTH): string => {
   if (title.length <= maxLength) return title;
@@ -199,67 +200,15 @@ const AdvancedChatInterface = () => {
                 ) : conversations.length === 0 ? (
                   <p className="px-3 py-2 text-sm text-rezzy-ink-light">No conversations</p>
                 ) : (
-                  conversations.map((conversation) => {
-                    const isTruncated = conversation.title.length > TITLE_MAX_LENGTH;
-                    const displayTitle = truncateTitle(conversation.title);
-
-                    const conversationButton = (
-                      <button
-                        onClick={() => handleSelectConversation(conversation.id)}
-                        className={`flex-1 text-left px-3 py-2.5 md:py-2 rounded-lg text-sm transition-colors ${
-                          currentConversationId === conversation.id
-                            ? 'bg-white text-rezzy-ink shadow-sm'
-                            : 'text-rezzy-ink-muted hover:bg-white/50'
-                        }`}
-                      >
-                        <p className="font-medium">{displayTitle}</p>
-                        <p className="text-xs text-rezzy-ink-light mt-0.5">
-                          {format(new Date(conversation.updated_at), 'MMM d')}
-                        </p>
-                      </button>
-                    );
-
-                    return (
-                      <div key={conversation.id} className="group flex items-center">
-                        {isTruncated ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              {conversationButton}
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="max-w-[300px]">
-                              <p>{conversation.title}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          conversationButton
-                        )}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <button className="p-2.5 md:p-2 ml-1 md:ml-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-rezzy-ink-light hover:text-rezzy-coral transition-all min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center">
-                              <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
-                            </button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete "{conversation.title}" and all its messages.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteConversation(conversation.id)}
-                                className="bg-rezzy-coral text-white hover:bg-rezzy-coral/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    );
-                  })
+                  conversations.map((conversation) => (
+                    <ConversationListItem
+                      key={conversation.id}
+                      conversation={conversation}
+                      isSelected={currentConversationId === conversation.id}
+                      onSelect={handleSelectConversation}
+                      onDelete={deleteConversation}
+                    />
+                  ))
                 )}
               </div>
             </TooltipProvider>
@@ -273,7 +222,7 @@ const AdvancedChatInterface = () => {
         <div className="h-14 px-3 md:px-4 flex items-center gap-2 md:gap-3 border-b border-rezzy-cream-deep">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 -ml-1 md:-ml-2 text-rezzy-ink-muted hover:text-rezzy-ink rounded-lg hover:bg-rezzy-cream transition-colors flex items-center justify-center"
+            className={`p-2 -ml-1 md:-ml-2 text-rezzy-ink-muted hover:text-rezzy-ink rounded-lg hover:bg-rezzy-cream transition-colors ${TOUCH_TARGET_CLASSES}`}
           >
             {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -289,7 +238,7 @@ const AdvancedChatInterface = () => {
             )}
             <button
               onClick={toggleReasoning}
-              className={`p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 rounded-lg transition-colors flex items-center justify-center ${
+              className={`p-2 rounded-lg transition-colors ${TOUCH_TARGET_CLASSES} ${
                 streamingState.showReasoning
                   ? 'bg-rezzy-sage-pale text-rezzy-sage'
                   : 'text-rezzy-ink-light hover:text-rezzy-ink hover:bg-rezzy-cream'
@@ -301,7 +250,7 @@ const AdvancedChatInterface = () => {
             {streamingState.isStreaming && (
               <button
                 onClick={stopStreaming}
-                className="p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-rezzy-coral hover:bg-rezzy-coral-pale rounded-lg transition-colors flex items-center justify-center"
+                className={`p-2 text-rezzy-coral hover:bg-rezzy-coral-pale rounded-lg transition-colors ${TOUCH_TARGET_CLASSES}`}
               >
                 <StopCircle className="w-5 h-5 md:w-4 md:h-4" />
               </button>
@@ -334,6 +283,7 @@ const AdvancedChatInterface = () => {
                 message={message}
                 showReasoning={streamingState.showReasoning}
                 isMobile={isMobile}
+                userEmail={user?.email}
               />
             ))}
 
@@ -341,56 +291,7 @@ const AdvancedChatInterface = () => {
             <ThinkingIndicator visible={showThinkingIndicator} />
 
             {/* Streaming message */}
-            {streamingState.streamingMessage && (
-              <div className="py-4 md:py-6">
-                <div className="flex gap-2 md:gap-3">
-                  <div className="w-6 h-6 md:w-7 md:h-7 flex-shrink-0">
-                    <RezzyLogo size={isMobile ? 24 : 28} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {/* Reasoning */}
-                    {streamingState.reasoningText && streamingState.showReasoning && (
-                      <div className="mb-3 text-sm text-rezzy-ink-muted italic border-l-2 border-rezzy-sage-lighter pl-3">
-                        {streamingState.reasoningText}
-                      </div>
-                    )}
-
-                    {/* Response */}
-                    <p className="text-rezzy-ink leading-relaxed whitespace-pre-wrap">
-                      {streamingState.streamingMessage}
-                      <span className="inline-block w-0.5 h-4 bg-rezzy-sage ml-0.5 animate-pulse" />
-                    </p>
-
-                    {/* Function calls */}
-                    {streamingState.functionCalls.map(call => (
-                      <FunctionCallDisplay key={call.id} functionCall={call} />
-                    ))}
-
-                    {/* Current function being executed */}
-                    {streamingState.currentFunction && (
-                      <p className="mt-2 text-sm text-rezzy-ink-muted">
-                        <span className="inline-block w-1.5 h-1.5 bg-rezzy-sage rounded-full mr-2 animate-pulse" />
-                        Running {streamingState.currentFunction.name}...
-                      </p>
-                    )}
-
-                    {/* Streaming images */}
-                    {streamingState.images.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {streamingState.images.map((url, index) => (
-                          <img
-                            key={index}
-                            src={url}
-                            alt="Generated"
-                            className="rounded-lg max-w-xs"
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+            <StreamingMessage streamingState={streamingState} isMobile={isMobile} />
 
             <div ref={messagesEndRef} />
           </div>
@@ -467,31 +368,26 @@ const AdvancedChatInterface = () => {
 };
 
 // Clean message bubble
-const MessageBubble = ({
+const MessageBubble = React.memo(({
   message,
   showReasoning,
-  isMobile
+  isMobile,
+  userEmail
 }: {
   message: AdvancedMessage;
   showReasoning: boolean;
   isMobile: boolean;
+  userEmail?: string;
 }) => {
   const isUser = message.role === "user";
   const [expandReasoning, setExpandReasoning] = useState(false);
+  const userInitial = userEmail?.[0]?.toUpperCase() || 'U';
 
   return (
     <div className="py-4 md:py-6">
       <div className="flex gap-2 md:gap-3">
         {/* Avatar */}
-        {isUser ? (
-          <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg flex-shrink-0 flex items-center justify-center bg-rezzy-ink text-white text-[10px] md:text-xs font-medium">
-            Y
-          </div>
-        ) : (
-          <div className="w-6 h-6 md:w-7 md:h-7 flex-shrink-0">
-            <RezzyLogo size={isMobile ? 24 : 28} />
-          </div>
-        )}
+        <MessageAvatar isUser={isUser} isMobile={isMobile} userInitial={userInitial} />
 
         <div className="flex-1 min-w-0">
           {/* Message content */}
@@ -562,10 +458,169 @@ const MessageBubble = ({
       </div>
     </div>
   );
-};
+});
+
+// Conversation list item component
+const ConversationListItem = React.memo(({
+  conversation,
+  isSelected,
+  onSelect,
+  onDelete
+}: {
+  conversation: ConversationState;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
+}) => {
+  const isTruncated = conversation.title.length > TITLE_MAX_LENGTH;
+  const displayTitle = truncateTitle(conversation.title);
+
+  const conversationButton = (
+    <button
+      onClick={() => onSelect(conversation.id)}
+      className={`flex-1 text-left px-3 py-2.5 md:py-2 rounded-lg text-sm transition-colors ${
+        isSelected
+          ? 'bg-white text-rezzy-ink shadow-sm'
+          : 'text-rezzy-ink-muted hover:bg-white/50'
+      }`}
+    >
+      <p className="font-medium">{displayTitle}</p>
+      <p className="text-xs text-rezzy-ink-light mt-0.5">
+        {format(new Date(conversation.updated_at), 'MMM d')}
+      </p>
+    </button>
+  );
+
+  return (
+    <div className="group flex items-center">
+      {isTruncated ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {conversationButton}
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-[300px]">
+            <p>{conversation.title}</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        conversationButton
+      )}
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <button className={`p-2.5 md:p-2 ml-1 md:ml-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-rezzy-ink-light hover:text-rezzy-coral transition-all ${TOUCH_TARGET_CLASSES}`}>
+            <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
+          </button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{conversation.title}" and all its messages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onDelete(conversation.id)}
+              className="bg-rezzy-coral text-white hover:bg-rezzy-coral/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+});
+
+// Message avatar component
+const MessageAvatar = React.memo(({
+  isUser,
+  isMobile,
+  userInitial
+}: {
+  isUser: boolean;
+  isMobile: boolean;
+  userInitial: string;
+}) => {
+  if (isUser) {
+    return (
+      <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg flex-shrink-0 flex items-center justify-center bg-rezzy-ink text-white text-[10px] md:text-xs font-medium">
+        {userInitial}
+      </div>
+    );
+  }
+  return (
+    <div className="w-6 h-6 md:w-7 md:h-7 flex-shrink-0">
+      <RezzyLogo size={isMobile ? 24 : 28} />
+    </div>
+  );
+});
+
+// Streaming message component
+const StreamingMessage = React.memo(({
+  streamingState,
+  isMobile
+}: {
+  streamingState: StreamingState;
+  isMobile: boolean;
+}) => {
+  if (!streamingState.streamingMessage) {
+    return null;
+  }
+
+  return (
+    <div className="py-4 md:py-6">
+      <div className="flex gap-2 md:gap-3">
+        <MessageAvatar isUser={false} isMobile={isMobile} userInitial="" />
+        <div className="flex-1 min-w-0">
+          {/* Reasoning */}
+          {streamingState.reasoningText && streamingState.showReasoning && (
+            <div className="mb-3 text-sm text-rezzy-ink-muted italic border-l-2 border-rezzy-sage-lighter pl-3">
+              {streamingState.reasoningText}
+            </div>
+          )}
+
+          {/* Response */}
+          <p className="text-rezzy-ink leading-relaxed whitespace-pre-wrap">
+            {streamingState.streamingMessage}
+            <span className="inline-block w-0.5 h-4 bg-rezzy-sage ml-0.5 animate-pulse" />
+          </p>
+
+          {/* Function calls */}
+          {streamingState.functionCalls.map(call => (
+            <FunctionCallDisplay key={call.id} functionCall={call} />
+          ))}
+
+          {/* Current function being executed */}
+          {streamingState.currentFunction && (
+            <p className="mt-2 text-sm text-rezzy-ink-muted">
+              <span className="inline-block w-1.5 h-1.5 bg-rezzy-sage rounded-full mr-2 animate-pulse" />
+              Running {streamingState.currentFunction.name}...
+            </p>
+          )}
+
+          {/* Streaming images */}
+          {streamingState.images.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {streamingState.images.map((url, index) => (
+                <img
+                  key={index}
+                  src={url}
+                  alt="Generated"
+                  className="rounded-lg max-w-xs"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
 
 // Minimal function call display
-const FunctionCallDisplay = ({ functionCall }: { functionCall: FunctionCall }) => (
+const FunctionCallDisplay = React.memo(({ functionCall }: { functionCall: FunctionCall }) => (
   <div className="mt-3 text-sm">
     <div className="flex items-center gap-2 text-rezzy-ink-muted">
       <span className={`w-1.5 h-1.5 rounded-full ${functionCall.status === 'success' ? 'bg-rezzy-sage' : 'bg-rezzy-coral'}`} />
@@ -578,6 +633,6 @@ const FunctionCallDisplay = ({ functionCall }: { functionCall: FunctionCall }) =
       </pre>
     )}
   </div>
-);
+));
 
 export default AdvancedChatInterface;
