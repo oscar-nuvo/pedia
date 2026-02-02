@@ -365,15 +365,21 @@ export const useAdvancedAIChat = (conversationId?: string) => {
     let receivedResponseComplete = false;
     const functionCallsBuffer: Map<string, any> = new Map();
 
+    // Buffer for accumulating partial SSE lines across TCP chunks
+    let lineBuffer = '';
+
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split('\n');
+        // Append new data to buffer and split into lines
+        lineBuffer += new TextDecoder().decode(value);
+        const parts = lineBuffer.split('\n');
+        // Keep the last part (may be incomplete) for the next chunk
+        lineBuffer = parts.pop() || '';
 
-        for (const line of lines) {
+        for (const line of parts) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
             if (data === '[DONE]') continue;
@@ -394,6 +400,29 @@ export const useAdvancedAIChat = (conversationId?: string) => {
             } catch (parseError) {
               console.error('Error parsing streaming data:', parseError);
             }
+          }
+        }
+      }
+
+      // Process any remaining data in the buffer after stream ends
+      if (lineBuffer.trim() && lineBuffer.startsWith('data: ')) {
+        const data = lineBuffer.slice(6);
+        if (data !== '[DONE]') {
+          try {
+            const parsed = JSON.parse(data);
+            await processStreamEvent(parsed, {
+              accumulatedContent,
+              accumulatedReasoning,
+              functionCallsBuffer,
+              conversationId,
+              currentResponseId,
+              setAccumulatedContent: (content: string) => { accumulatedContent = content; },
+              setAccumulatedReasoning: (reasoning: string) => { accumulatedReasoning = reasoning; },
+              setCurrentResponseId: (id: string) => { currentResponseId = id; },
+              setReceivedResponseComplete: (received: boolean) => { receivedResponseComplete = received; }
+            });
+          } catch (parseError) {
+            console.error('Error parsing final buffer data:', parseError);
           }
         }
       }
