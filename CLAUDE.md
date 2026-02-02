@@ -427,3 +427,73 @@ After successful login/onboarding, users are redirected to `/ai-copilot`.
 - Clear browser localStorage
 - Check Supabase Auth logs in dashboard
 - Verify `.env.local` points to correct Supabase instance
+
+---
+
+## AI Chatbot E2E Testing Checklist
+
+> **Run these tests after any changes to the AI chatbot functionality.** Use Playwright MCP or manual browser testing.
+
+### Core Functionality
+
+- [ ] **Auth Flow**: Login with test credentials (test@example.com / testpassword123)
+- [ ] **Send Message**: Send a text message and verify AI response streams correctly
+- [ ] **New Conversation**: Create a new conversation, verify title auto-generates
+- [ ] **Conversation History**: Switch between conversations, verify messages persist
+- [ ] **Delete Conversation**: Delete a conversation, verify it's removed from sidebar
+
+### File Attachments
+
+- [ ] **Image Upload**: Attach PNG/JPG, verify preview displays, AI analyzes image
+- [ ] **PDF Upload**: Attach PDF, verify AI extracts and analyzes content
+- [ ] **File Removal**: Remove attached file before sending, verify it's cleared
+
+### Responsive Layouts
+
+| Viewport | Width | Test Cases |
+|----------|-------|------------|
+| **Mobile** | 375px | Sidebar hidden by default, hamburger menu visible, touch targets ≥44px |
+| **Tablet** | 768px | Layout adapts appropriately at breakpoint |
+| **Desktop** | 1024px+ | Sidebar visible by default, full layout displayed |
+
+### Mobile-Specific Tests
+
+- [ ] **Sidebar Toggle**: Hamburger menu opens/closes sidebar
+- [ ] **Auto-Close**: Selecting a conversation auto-closes sidebar on mobile
+- [ ] **Touch Targets**: All buttons have minimum 44px touch area
+- [ ] **Input Zoom**: Text input doesn't trigger iOS zoom (font-size ≥16px)
+- [ ] **Safe Area**: Input area respects device safe area insets
+
+### Streaming & Error Handling
+
+- [ ] **Stream Display**: Streaming response displays progressively
+- [ ] **Reasoning Toggle**: Show/hide reasoning steps works correctly
+- [ ] **Error States**: Network errors display user-friendly messages
+- [ ] **Retry**: Can retry failed messages
+
+### Browser Testing Commands
+
+```bash
+# Using Playwright MCP (recommended)
+# 1. Navigate to app
+browser_navigate https://pedia.lovable.app
+
+# 2. Test mobile viewport
+browser_resize 375 667
+
+# 3. Test tablet viewport
+browser_resize 768 1024
+
+# 4. Test desktop viewport
+browser_resize 1280 800
+
+# 5. Take screenshot for visual verification
+browser_take_screenshot
+```
+
+### Quick Smoke Test
+
+For rapid verification after minor changes:
+1. Login → Send message → Verify response
+2. Resize to mobile (375px) → Verify sidebar behavior
+3. Upload image → Verify AI response references it
