@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Frontend**: React 18 + TypeScript + Vite + shadcn/ui + Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Edge Functions, Auth)
-- **AI**: OpenAI Responses API with streaming and function calling
+- **AI**: OpenAI Responses API with streaming and web search
 - **Hosting**: Lovable/Vercel (frontend), Supabase Cloud (backend)
 
 ## Quick Reference
@@ -302,13 +302,53 @@ Core tables with RLS policies:
 | `delete-conversation-file` | Required | Delete files from OpenAI + DB |
 | `demo-chat` | No | Landing page demo chat with email capture and query limits |
 
-### Function Calling (Tools)
+### OpenAI Tools Configuration
 
-The chat supports two medical tools:
-- `calculate_pediatric_dosage` - Weight/age-based medication dosing with safety limits
-- `analyze_growth_chart` - Pediatric growth percentile analysis
+The chat uses OpenAI's **Responses API** (not Chat Completions). Currently enabled:
+- `web_search` - Built-in tool for up-to-date medical information
 
-Tools are defined in `pediatric-ai-chat/index.ts` and executed server-side.
+**Custom function tools are disabled** (`calculate_pediatric_dosage`, `analyze_growth_chart`). See critical notes below.
+
+---
+
+## Critical Implementation Notes
+
+> **Read this before modifying the AI chat system.** These gotchas caused production bugs.
+
+### 1. Responses API Tool Types Are Different
+
+```
+Built-in tools:   {"type": "web_search"}           → OpenAI handles entirely
+Custom functions: {"type": "function", "name":...} → YOU must submit results back
+```
+
+**Why custom functions are disabled:** The Responses API requires you to execute custom functions and submit results back to OpenAI to continue generation. Our implementation streamed results to the client but never fed them back to OpenAI, causing the model to hang after calling functions.
+
+The model can reason about pediatric dosages using its training data (Harriet Lane, Nelson, etc.) without needing custom function tools.
+
+### 2. SSE Streaming Requires Line Buffering
+
+TCP chunks don't respect SSE line boundaries. **Both server and client must buffer partial lines:**
+
+```typescript
+// CORRECT - buffer partial lines
+lineBuffer += new TextDecoder().decode(value);
+const parts = lineBuffer.split('\n');
+lineBuffer = parts.pop() || ''; // Keep incomplete line for next chunk
+for (const line of parts) { /* process complete lines only */ }
+
+// WRONG - causes JSON parse errors on large responses
+const chunk = new TextDecoder().decode(value);
+const lines = chunk.split('\n'); // Last line may be incomplete!
+```
+
+### 3. Stored Prompt in Use
+
+The chat uses a stored prompt from OpenAI's Prompt Library:
+```
+prompt: { id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f" }
+```
+This prompt defines the AI Overseer persona and expert agent behavior. Changes to system behavior may require updating this prompt in OpenAI's dashboard.
 
 ---
 
