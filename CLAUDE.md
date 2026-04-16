@@ -346,7 +346,7 @@ const lines = chunk.split('\n'); // Last line may be incomplete!
 
 The chat uses a stored prompt from OpenAI's Prompt Library:
 ```
-prompt: { id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f" }
+prompt: { id: "pmpt_69e0338587288190850ee42b37a8f34106460a9508343681" }
 ```
 This prompt defines the AI Overseer persona and expert agent behavior. Changes to system behavior may require updating this prompt in OpenAI's dashboard.
 

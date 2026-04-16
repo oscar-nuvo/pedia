@@ -201,7 +201,7 @@ export const useAdvancedAIChat = (conversationId?: string) => {
           user_id: user.id,
           title,
           metadata: {
-            prompt_id: 'pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f',
+            prompt_id: 'pmpt_69e0338587288190850ee42b37a8f34106460a9508343681',
             messageCount: 0,
             fileIds: [],
             reasoningItems: []

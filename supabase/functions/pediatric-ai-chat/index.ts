@@ -283,7 +283,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-5',
         prompt: {
-          id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f"
+          id: "pmpt_69e0338587288190850ee42b37a8f34106460a9508343681"
         },
         input: openaiInput,
         tools, // Built-in tools only (web_search)
@@ -354,7 +354,7 @@ serve(async (req) => {
                 content: assistantContent.trim(),
                 response_id: currentResponseId,
                 metadata: { 
-                  prompt_id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f", 
+                  prompt_id: "pmpt_69e0338587288190850ee42b37a8f34106460a9508343681", 
                   responseId: currentResponseId,
                   reasoningSummary: reasoningSummary || undefined
                 }
@@ -558,7 +558,7 @@ async function handleBackgroundTask(input: string, taskType: string, patientCont
     },
     body: JSON.stringify({
       prompt: {
-        id: "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f"
+        id: "pmpt_69e0338587288190850ee42b37a8f34106460a9508343681"
       },
       input: [
         {

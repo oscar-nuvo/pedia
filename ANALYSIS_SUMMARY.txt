@@ -44,7 +44,7 @@ KEY FINDINGS
 
    AI STACK:
    - OpenAI Responses API (streaming, reasoning, function calling)
-   - Prompt library (ID: pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f)
+   - Prompt library (ID: pmpt_69e0338587288190850ee42b37a8f34106460a9508343681)
    - Tools: calculate_pediatric_dosage, analyze_growth_chart
 
 4. CRITICAL PATTERNS

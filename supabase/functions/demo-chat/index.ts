@@ -13,7 +13,7 @@ const RATE_LIMIT_PER_HOUR = 50;
 const MX_LOOKUP_TIMEOUT_MS = 3000;
 
 // Use the same prompt ID as production for consistent responses
-const PROMPT_ID = "pmpt_68d880ea8b0c8194897a498de096ee0f0859affba435451f";
+const PROMPT_ID = "pmpt_69e0338587288190850ee42b37a8f34106460a9508343681";
 
 // Injection patterns to block (case-insensitive)
 const INJECTION_PATTERNS = [
