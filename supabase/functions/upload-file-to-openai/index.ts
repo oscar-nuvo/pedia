@@ -196,13 +196,10 @@ serve(async (req) => {
     const buffer = await file.arrayBuffer();
 
     // Create FormData for OpenAI Files API
-    // Use 'vision' purpose for images, 'assistants' for documents
-    const isImage = file.type.startsWith('image/');
-    const purpose = isImage ? 'vision' : 'assistants';
-
+    // Use 'user_data' purpose for all files (required by Responses API)
     const openaiFormData = new FormData();
     openaiFormData.append('file', new Blob([buffer], { type: file.type }), file.name);
-    openaiFormData.append('purpose', purpose);
+    openaiFormData.append('purpose', 'user_data');
 
     // Log with structured format for better debugging
     console.log('Upload to OpenAI started', {
