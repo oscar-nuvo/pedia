@@ -298,16 +298,7 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API error:', response.status, errorText);
-      // Surface OpenAI error detail directly for debugging
-      return new Response(JSON.stringify({
-        error: `OpenAI API error: ${response.status}`,
-        detail: errorText.substring(0, 1000),
-        fileIds,
-        hasFiles: fileIds.length > 0
-      }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     console.log(`Making OpenAI Responses API request for conversation: ${conversationId}`);
