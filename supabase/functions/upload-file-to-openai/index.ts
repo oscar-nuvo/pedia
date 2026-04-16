@@ -197,8 +197,10 @@ serve(async (req) => {
 
     // Create FormData for OpenAI Files API
     // Use 'user_data' purpose for all files (required by Responses API)
+    // Normalize filename extension to lowercase (OpenAI rejects uppercase e.g. .PDF)
+    const normalizedFilename = file.name.replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
     const openaiFormData = new FormData();
-    openaiFormData.append('file', new Blob([buffer], { type: file.type }), file.name);
+    openaiFormData.append('file', new Blob([buffer], { type: file.type }), normalizedFilename);
     openaiFormData.append('purpose', 'user_data');
 
     // Log with structured format for better debugging
